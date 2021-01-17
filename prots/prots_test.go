@@ -1,6 +1,7 @@
 package prots
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,27 +17,74 @@ func (mock *FakeP4Runner) Run(args []string) ([]map[interface{}]interface{}, err
 	return ags.Get(0).([]map[interface{}]interface{}), ags.Error(1)
 }
 
-var basicTest = []map[interface{}]interface{}{{
-	"perm":      "super",
-	"host":      "host",
-	"user":      "user",
-	"line":      "1",
-	"depotFile": "//...",
-	// No unmap, so should be false
-}}
+type protTest struct {
+	input []map[interface{}]interface{}
+	want  []Prot
+}
+
+var protTests = []protTest{
+	{input: []map[interface{}]interface{}{{
+		"perm":      "super",
+		"host":      "host",
+		"user":      "user",
+		"line":      "1",
+		"depotFile": "//...",
+		// No unmap, so should be false
+	}},
+		want: []Prot{{
+			Perm:      "super",
+			Host:      "host",
+			User:      "user",
+			Line:      1,
+			DepotFile: "//...",
+			Unmap:     false,
+		}},
+	},
+	{
+		input: []map[interface{}]interface{}{
+			{
+				"perm":      "super",
+				"host":      "host",
+				"user":      "user",
+				"line":      "1",
+				"depotFile": "//...",
+				// No unmap, so should be false
+			},
+			{
+				"perm":      "list",
+				"host":      "*",
+				"unmap":     "", // negative
+				"user":      "user",
+				"line":      "2",
+				"depotFile": "//depot/...",
+			}},
+		want: []Prot{
+			{
+				Perm:      "super",
+				Host:      "host",
+				User:      "user",
+				Line:      1,
+				DepotFile: "//...",
+				Unmap:     false,
+			}, {
+				Perm:      "list",
+				Host:      "*",
+				User:      "user",
+				Line:      2,
+				DepotFile: "//depot/...",
+				Unmap:     true,
+			}},
+	},
+}
 
 func TestProtections(t *testing.T) {
-	fp4 := &FakeP4Runner{}
-	fp4.On("Run", []string{"protects", "-a", "//depot/path/afile.txt"}).Return(basicTest, nil)
-	res, err := Protections(fp4, "//depot/path/afile.txt")
-	assert := assert.New(t)
-	assert.Nil(err)
-	assert.NotNil(res)
-	fp4.AssertExpectations(t)
-	assert.Equal(res[0].Perm, "super")
-	assert.Equal(res[0].Host, "host")
-	assert.Equal(res[0].User, "user")
-	assert.Equal(res[0].Line, 1)
-	assert.Equal(res[0].DepotFile, "//...")
-	assert.Equal(res[0].Unmap, false)
+	for _, tst := range protTests {
+		fp4 := &FakeP4Runner{}
+		fp4.On("Run", []string{"protects", "-a", "//depot/path/afile.txt"}).Return(tst.input, nil)
+		res, err := Protections(fp4, "//depot/path/afile.txt")
+		assert := assert.New(t)
+		assert.Nil(err)
+		assert.Equal(res, tst.want)
+		fmt.Printf("%v == %v", res, tst.want)
+	}
 }
