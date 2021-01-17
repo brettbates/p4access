@@ -43,7 +43,7 @@ type Prot struct {
 	Unmap     bool
 	Host      string
 	User      string
-	Line      uint64
+	Line      int
 	DepotFile string
 }
 
@@ -70,7 +70,7 @@ func Protections(p4r P4Runner, path string) ([]Prot, error) {
 			p.User = v.(string)
 		}
 		if v, ok := r["line"]; ok {
-			p.Line, err = strconv.ParseUint((v.(string)), 10, 64)
+			p.Line, err = strconv.Atoi((v.(string)))
 		}
 		if v, ok := r["depotFile"]; ok {
 			p.DepotFile = v.(string)

@@ -28,8 +28,15 @@ var basicTest = []map[interface{}]interface{}{{
 func TestProtections(t *testing.T) {
 	fp4 := &FakeP4Runner{}
 	fp4.On("Run", []string{"protects", "-a", "//depot/path/afile.txt"}).Return(basicTest, nil)
-	res, _ := Protections(fp4, "//depot/path/afile.txt")
-	// assert.NotNil(t, err)
-	assert.NotNil(t, res)
+	res, err := Protections(fp4, "//depot/path/afile.txt")
+	assert := assert.New(t)
+	assert.Nil(err)
+	assert.NotNil(res)
 	fp4.AssertExpectations(t)
+	assert.Equal(res[0].Perm, "super")
+	assert.Equal(res[0].Host, "host")
+	assert.Equal(res[0].User, "user")
+	assert.Equal(res[0].Line, 1)
+	assert.Equal(res[0].DepotFile, "//...")
+	assert.Equal(res[0].Unmap, false)
 }
