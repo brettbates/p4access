@@ -8,5 +8,7 @@ import (
 
 func main() {
 	p4c := prots.NewP4C()
-	fmt.Println(p4c.Protections("//depot/..."))
+	res, err := prots.Protections(p4c, "//depot/...")
+	fmt.Println(err)
+	fmt.Println(res)
 }

@@ -7,6 +7,11 @@ import (
 	p4 "github.com/rcowham/go-libp4"
 )
 
+// P4Runner is an interface for testing without calling p4
+type P4Runner interface {
+	Run([]string) ([]map[interface{}]interface{}, error)
+}
+
 type P4C struct {
 	p4.P4
 }
@@ -43,9 +48,11 @@ type Prot struct {
 }
 
 // Protections takes a path in p4 depot syntax
-func (p4c *P4C) Protections(path string) []Prot {
-	res, err := p4c.Run([]string{"protects", "-a", path})
+func Protections(p4r P4Runner, path string) ([]Prot, error) {
+	res, err := p4r.Run([]string{"protects", "-a", path})
 	if err != nil {
+		// TODO There is an err for unknown code after successful run
+		// May be in go-libp4
 		log.Printf("Failed to get protects for %s\nRes: %v\nErr: %v\n", path, res, err)
 	}
 	log.Println(res)
@@ -73,5 +80,5 @@ func (p4c *P4C) Protections(path string) []Prot {
 		}
 		prots = append(prots, p)
 	}
-	return prots
+	return prots, err
 }
