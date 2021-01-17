@@ -1,8 +1,12 @@
 package main
 
-import "fmt"
-import "github.com/brettbates/p4access/prots"
+import (
+	"fmt"
+
+	"github.com/brettbates/p4access/prots"
+)
 
 func main() {
-	fmt.Println(prots.Protections("//perforce/..."))
+	p4c := prots.NewP4C()
+	fmt.Println(p4c.Protections("//depot/..."))
 }

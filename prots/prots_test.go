@@ -1,0 +1,3 @@
+package prots
+
+func TestProtections {}

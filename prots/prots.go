@@ -1,28 +1,77 @@
 package prots
 
-import p4 "github.com/rcowham/go-libp4"
-import "log"
+import (
+	"log"
+	"strconv"
 
-// Just using env variables for now
-var p4c *p4.P4 = p4.NewP4()
+	p4 "github.com/rcowham/go-libp4"
+)
 
-func getKeys(mp []map[interface{}]interface{}) []string{
-
-	keys := make([]string, len(mp))
-
-	i := 0
-	for k := range mp {
-		keys[i] = k
-		i++
-	}
-	return keys
+type P4C struct {
+	p4.P4
 }
 
-func Protections (path string) string {
+func NewP4C() *P4C {
+	return &P4C{P4: *p4.NewP4()}
+}
+
+// PermMap maps permission levels to their hex value
+var PermMap map[string]uint8
+
+func init() {
+	PermMap = map[string]uint8{
+		"none":   0x000000, // none
+		"list":   0x000001, // Grants list access
+		"read":   0x000002, // Grants read access
+		"branch": 0x000004, // Grants ability to branch/integ from
+		"open":   0x000008, // Grants open access
+		"write":  0x000010, // Grants write access
+		"review": 0x000020, // Grants review access
+		"admin":  0x000080, // Grants admin access
+		"super":  0x000040, // Grants super-user access
+	}
+}
+
+// Prot is a single line of a protections table
+type Prot struct {
+	Perm      string
+	Unmap     bool
+	Host      string
+	User      string
+	Line      uint64
+	DepotFile string
+}
+
+// Protections takes a path in p4 depot syntax
+func (p4c *P4C) Protections(path string) []Prot {
 	res, err := p4c.Run([]string{"protects", "-a", path})
 	if err != nil {
-		log.Fatalf("Failed to get protects for %s\n", path)
+		log.Printf("Failed to get protects for %s\nRes: %v\nErr: %v\n", path, res, err)
 	}
 	log.Println(res)
-	return res
+
+	prots := []Prot{}
+	for _, r := range res {
+		p := Prot{}
+		if v, ok := r["perm"]; ok {
+			p.Perm = v.(string)
+		}
+		if v, ok := r["host"]; ok {
+			p.Host = v.(string)
+		}
+		if v, ok := r["user"]; ok {
+			p.User = v.(string)
+		}
+		if v, ok := r["line"]; ok {
+			p.Line, err = strconv.ParseUint((v.(string)), 10, 64)
+		}
+		if v, ok := r["depotFile"]; ok {
+			p.DepotFile = v.(string)
+		}
+		if _, ok := r["unmap"]; ok {
+			p.Unmap = ok
+		}
+		prots = append(prots, p)
+	}
+	return prots
 }
