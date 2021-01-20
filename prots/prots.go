@@ -20,11 +20,11 @@ func NewP4C() *P4C {
 	return &P4C{P4: *p4.NewP4()}
 }
 
-// PermMap maps permission levels to their hex value
-var PermMap map[string]uint8
+// permMap maps permission levels to their hex value
+var permMap map[string]uint8
 
 func init() {
-	PermMap = map[string]uint8{
+	permMap = map[string]uint8{
 		"none":   0x000000, // none
 		"list":   0x000001, // Grants list access
 		"read":   0x000002, // Grants read access
@@ -88,4 +88,26 @@ func Protections(p4r P4Runner, path string) ([]Prot, error) {
 // MaxAccess gets the maximum access level for a user/group at given path
 func MaxAccess(prots []Prot, user string) (access string) {
 	return "none"
+}
+
+// hasAccess checks whether the given user already has access
+func hasAccess(p4r P4Runner, user string, path string, reqAccess string) (bool, error) {
+	res, err := p4r.Run([]string{"protects", "-M", "-u", user, path})
+	if err != nil {
+		log.Printf("Failed to run protects for user %s to path %s\n%v", user, path, err)
+		return false, err
+	}
+
+	var permMax uint8
+	if v, ok := res[0]["permMax"]; ok {
+		permMax = permMap[v.(string)]
+	} else {
+		permMax = permMap["none"]
+	}
+	if permMax >= permMap[reqAccess] {
+		return true, nil
+	} else {
+		return false, nil
+	}
+
 }

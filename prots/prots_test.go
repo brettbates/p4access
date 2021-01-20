@@ -111,30 +111,119 @@ func TestProtections(t *testing.T) {
 	}
 }
 
+type AccessInput struct {
+	user      string
+	path      string
+	reqAccess string                        // What access level we are are asking for
+	retAccess []map[interface{}]interface{} // Access level returned by p4.Run()
+}
+
+type AccessResult struct {
+	group  string
+	access string
+}
+
 type accessTest struct {
-	input []Prot
-	want  string
+	input AccessInput
+	want  bool
+	err   error
 }
 
 var accessTests = []accessTest{
 	{
-		input: []Prot{{
-			Perm:      "super",
-			Host:      "host",
-			User:      "user",
-			Line:      1,
-			DepotFile: "//...",
-			Unmap:     false,
-		}},
-		want: "super"},
+		input: AccessInput{
+			"usr",
+			"//depot/path/afile",
+			"super",
+			[]map[interface{}]interface{}{{"permMax": "super"}},
+		},
+		want: true,
+		err:  nil,
+	},
 	{
-		input: []Prot{{
-			Perm:      "super",
-			Host:      "host",
-			User:      "group",
-			Line:      1,
-			DepotFile: "//...",
-			Unmap:     false,
-		}},
-		want: "super"},
+		input: AccessInput{
+			"usr",
+			"//depot/path/afile",
+			"read",
+			[]map[interface{}]interface{}{{"permMax": "list"}},
+		},
+		want: false,
+		err:  nil,
+	},
 }
+
+func TestHasAccess(t *testing.T) {
+	// If a user already has access, don't look, just report that
+	for _, tst := range accessTests {
+		fp4 := &FakeP4Runner{}
+		fp4.On("Run", []string{"protects", "-M", "-u", tst.input.user, tst.input.path}).Return(tst.input.retAccess, tst.err)
+		res, err := hasAccess(fp4, tst.input.user, tst.input.path, tst.input.reqAccess)
+		assert := assert.New(t)
+		if tst.err == nil {
+			assert.Nil(err)
+		} else {
+			assert.EqualError(err, tst.err.Error())
+		}
+		assert.Equal(res, tst.want)
+		fmt.Printf("%v == %v", res, tst.want)
+	}
+}
+
+/**
+So I remember for later, I was mixing up MaxAccess and the 'advise' function
+type adviseInput struct {
+	user    string
+	group   string
+	currMax string
+	path    string
+	prots   []Prot
+}
+
+type adviseResult struct {
+	group  string
+	access string
+}
+
+type adviseTest struct {
+	input adviseInput
+	want  adviseResult
+	err   string
+}
+
+var adviseTests = []adviseTest{
+	{
+		input: adviseInput{
+			"usr",
+			"super",
+			"//depot/path/afile",
+			[]Prot{{
+				Perm:      "super",
+				Host:      "host",
+				User:      "usr",
+				Line:      1,
+				DepotFile: "//...",
+				Unmap:     false,
+			}}},
+		want: adviseResult{"", ""},
+		err:  "User usr already has super advise to //depot/path/afile",
+	},
+}
+
+func TestAdvise(t *testing.T) {
+	for _, tst := range accessTests {
+		fp4 := &FakeP4Runner{}
+		fp4.On("Run", []string{"protects", "-M", "-u", tst.input.user, tst.input.path}).Return(tst.input.currMax, nil)
+		res, err := MaxAccess(fp4, tst.input.user, tst.input.group, test.input.path, test.input.prots)
+		assert := assert.New(t)
+		if tst.err == "" {
+			assert.Nil(err)
+		} else {
+			assert.EqualError(err, tst.err)
+		}
+		assert.Equal(res, tst.want)
+		fmt.Printf("%v == %v", res, tst.want)
+	}
+}
+}
+
+**/
