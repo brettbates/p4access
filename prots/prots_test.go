@@ -35,6 +35,26 @@ var protTests = []protTest{
 			Perm:      "super",
 			Host:      "host",
 			User:      "user",
+			IsGroup:   false,
+			Line:      1,
+			DepotFile: "//...",
+			Unmap:     false,
+		}},
+	},
+	{input: []map[interface{}]interface{}{{
+		"perm":      "super",
+		"host":      "host",
+		"user":      "grp",
+		"isgroup":   "",
+		"line":      "1",
+		"depotFile": "//...",
+		// No unmap, so should be false
+	}},
+		want: []Prot{{
+			Perm:      "super",
+			Host:      "host",
+			User:      "grp",
+			IsGroup:   true,
 			Line:      1,
 			DepotFile: "//...",
 			Unmap:     false,
@@ -63,6 +83,7 @@ var protTests = []protTest{
 				Perm:      "super",
 				Host:      "host",
 				User:      "user",
+				IsGroup:   false,
 				Line:      1,
 				DepotFile: "//...",
 				Unmap:     false,
@@ -70,6 +91,7 @@ var protTests = []protTest{
 				Perm:      "list",
 				Host:      "*",
 				User:      "user",
+				IsGroup:   false,
 				Line:      2,
 				DepotFile: "//depot/...",
 				Unmap:     true,
@@ -87,4 +109,32 @@ func TestProtections(t *testing.T) {
 		assert.Equal(res, tst.want)
 		fmt.Printf("%v == %v", res, tst.want)
 	}
+}
+
+type accessTest struct {
+	input []Prot
+	want  string
+}
+
+var accessTests = []accessTest{
+	{
+		input: []Prot{{
+			Perm:      "super",
+			Host:      "host",
+			User:      "user",
+			Line:      1,
+			DepotFile: "//...",
+			Unmap:     false,
+		}},
+		want: "super"},
+	{
+		input: []Prot{{
+			Perm:      "super",
+			Host:      "host",
+			User:      "group",
+			Line:      1,
+			DepotFile: "//...",
+			Unmap:     false,
+		}},
+		want: "super"},
 }

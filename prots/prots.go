@@ -43,6 +43,7 @@ type Prot struct {
 	Unmap     bool
 	Host      string
 	User      string
+	IsGroup   bool
 	Line      int
 	DepotFile string
 }
@@ -51,8 +52,6 @@ type Prot struct {
 func Protections(p4r P4Runner, path string) ([]Prot, error) {
 	res, err := p4r.Run([]string{"protects", "-a", path})
 	if err != nil {
-		// TODO There is an err for unknown code after successful run
-		// May be in go-libp4
 		log.Printf("Failed to get protects for %s\nRes: %v\nErr: %v\n", path, res, err)
 	}
 	log.Println(res)
@@ -78,7 +77,15 @@ func Protections(p4r P4Runner, path string) ([]Prot, error) {
 		if _, ok := r["unmap"]; ok {
 			p.Unmap = ok
 		}
+		if _, ok := r["isgroup"]; ok {
+			p.IsGroup = ok
+		}
 		prots = append(prots, p)
 	}
 	return prots, err
+}
+
+// MaxAccess gets the maximum access level for a user/group at given path
+func MaxAccess(prots []Prot, user string) (access string) {
+	return "none"
 }
