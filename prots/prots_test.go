@@ -2,6 +2,7 @@ package prots
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -179,61 +180,61 @@ func TestHasAccess(t *testing.T) {
 	}
 }
 
-/**
-So I remember for later, I was mixing up MaxAccess and the 'advise' function
 type adviseInput struct {
-	user    string
-	group   string
-	currMax string
-	path    string
-	prots   []Prot
-}
-
-type adviseResult struct {
-	group  string
-	access string
+	user      string
+	path      string
+	reqAccess string
+	prots     []Prot
 }
 
 type adviseTest struct {
 	input adviseInput
-	want  adviseResult
-	err   string
+	want  []Prot
+	err   error
 }
 
 var adviseTests = []adviseTest{
 	{
 		input: adviseInput{
 			"usr",
-			"super",
 			"//depot/path/afile",
+			"super",
 			[]Prot{{
 				Perm:      "super",
 				Host:      "host",
-				User:      "usr",
+				User:      "grp",
+				IsGroup:   true,
 				Line:      1,
 				DepotFile: "//...",
 				Unmap:     false,
 			}}},
-		want: adviseResult{"", ""},
-		err:  "User usr already has super advise to //depot/path/afile",
+		want: []Prot{{
+			Perm:      "super",
+			Host:      "host",
+			User:      "grp",
+			IsGroup:   true,
+			Line:      1,
+			DepotFile: "//...",
+			Unmap:     false,
+		}},
+		err: nil,
 	},
 }
 
 func TestAdvise(t *testing.T) {
-	for _, tst := range accessTests {
+	// Advise the user on which groups, to use
+	for _, tst := range adviseTests {
 		fp4 := &FakeP4Runner{}
-		fp4.On("Run", []string{"protects", "-M", "-u", tst.input.user, tst.input.path}).Return(tst.input.currMax, nil)
-		res, err := MaxAccess(fp4, tst.input.user, tst.input.group, test.input.path, test.input.prots)
+		fp4.On("Run", []string{"protects", "-M", "-u", tst.input.user, tst.input.path}).Return("none", nil)
+		fp4.On("Run", []string{"protects", "-M", "-g", tst.input.user, tst.input.path}).Return("super", nil)
+		res, err := Advise(fp4, tst.input.user, tst.input.path, tst.input.reqAccess, tst.input.prots)
 		assert := assert.New(t)
-		if tst.err == "" {
+		if tst.err == nil {
 			assert.Nil(err)
 		} else {
-			assert.EqualError(err, tst.err)
+			assert.EqualError(err, tst.err.Error())
 		}
 		assert.Equal(res, tst.want)
 		fmt.Printf("%v == %v", res, tst.want)
 	}
 }
-}
-
-**/
