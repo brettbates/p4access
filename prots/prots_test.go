@@ -1,7 +1,7 @@
 package prots
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -107,7 +107,6 @@ func TestProtections(t *testing.T) {
 		assert := assert.New(t)
 		assert.Nil(err)
 		assert.Equal(res, tst.want)
-		fmt.Printf("%v == %v", res, tst.want)
 	}
 }
 
@@ -150,6 +149,18 @@ var accessTests = []accessTest{
 		want: false,
 		err:  nil,
 	},
+	{
+		input: AccessInput{
+			"usr",
+			"//notreal/path/afile",
+			"read",
+			[]map[interface{}]interface{}{{
+				"code": "error",
+				"data": "//notreal/... - must refer to client 'NP-B-BATES'."}},
+		},
+		want: false,
+		err:  errors.New("exit status 1"),
+	},
 }
 
 func TestHasAccess(t *testing.T) {
@@ -165,7 +176,6 @@ func TestHasAccess(t *testing.T) {
 			assert.EqualError(err, tst.err.Error())
 		}
 		assert.Equal(res, tst.want)
-		fmt.Printf("%v == %v", res, tst.want)
 	}
 }
 

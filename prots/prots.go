@@ -54,7 +54,6 @@ func Protections(p4r P4Runner, path string) ([]Prot, error) {
 	if err != nil {
 		log.Printf("Failed to get protects for %s\nRes: %v\nErr: %v\n", path, res, err)
 	}
-	log.Println(res)
 
 	prots := []Prot{}
 	for _, r := range res {
@@ -94,7 +93,7 @@ func MaxAccess(prots []Prot, user string) (access string) {
 func hasAccess(p4r P4Runner, user string, path string, reqAccess string) (bool, error) {
 	res, err := p4r.Run([]string{"protects", "-M", "-u", user, path})
 	if err != nil {
-		log.Printf("Failed to run protects for user %s to path %s\n%v", user, path, err)
+		log.Printf("\nFailed to run protects for user %s to path %s\n%v\n", user, path, err)
 		return false, err
 	}
 
@@ -106,8 +105,6 @@ func hasAccess(p4r P4Runner, user string, path string, reqAccess string) (bool, 
 	}
 	if permMax >= permMap[reqAccess] {
 		return true, nil
-	} else {
-		return false, nil
 	}
-
+	return false, nil
 }
