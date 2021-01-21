@@ -12,10 +12,12 @@ type P4Runner interface {
 	Run([]string) ([]map[interface{}]interface{}, error)
 }
 
+// P4C Is a wrapper around the p4 connection
 type P4C struct {
 	p4.P4
 }
 
+// NewP4C connects to p4 and returns a P4C wrapper
 func NewP4C() *P4C {
 	return &P4C{P4: *p4.NewP4()}
 }
@@ -84,13 +86,13 @@ func Protections(p4r P4Runner, path string) ([]Prot, error) {
 	return prots, err
 }
 
-// MaxAccess gets the maximum access level for a user/group at given path
-func MaxAccess(prots []Prot, user string) (access string) {
-	return "none"
+// Advise running user on probable group to join
+func Advise(p4r P4Runner, user, path, reqAccess string, prots []Prot) ([]Prot, error) {
+	return []Prot{}, nil
 }
 
 // hasAccess checks whether the given user already has access
-func hasAccess(p4r P4Runner, user string, path string, reqAccess string) (bool, error) {
+func hasAccess(p4r P4Runner, user, path, reqAccess string) (bool, error) {
 	res, err := p4r.Run([]string{"protects", "-M", "-u", user, path})
 	if err != nil {
 		log.Printf("\nFailed to run protects for user %s to path %s\n%v\n", user, path, err)
