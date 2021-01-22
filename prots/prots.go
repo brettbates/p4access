@@ -88,7 +88,14 @@ func Protections(p4r P4Runner, path string) ([]Prot, error) {
 
 // Advise running user on probable group to join
 func Advise(p4r P4Runner, user, path, reqAccess string, prots []Prot) ([]Prot, error) {
-	return []Prot{}, nil
+	out := []Prot{}
+	for i := len(prots) - 1; i >= 0; i-- {
+		c := prots[i]
+		if permMap[c.Perm] >= permMap[reqAccess] {
+			out = append(out, c)
+		}
+	}
+	return out, nil
 }
 
 // hasAccess checks whether the given user already has access
