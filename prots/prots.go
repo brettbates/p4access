@@ -2,7 +2,9 @@ package prots
 
 import (
 	"log"
+	"sort"
 	"strconv"
+	"strings"
 
 	p4 "github.com/rcowham/go-libp4"
 )
@@ -48,6 +50,7 @@ type Prot struct {
 	IsGroup   bool
 	Line      int
 	DepotFile string
+	Segments  int
 }
 
 // Prots is a set of protections
@@ -84,13 +87,16 @@ func Protections(p4r P4Runner, path string) (Prots, error) {
 		if _, ok := r["isgroup"]; ok {
 			p.IsGroup = ok
 		}
+		p.Segments = len(strings.FieldsFunc(p.DepotFile, func(c rune) bool {
+			return c == '/'
+		}))
 		prots = append(prots, p)
 	}
 	return prots, err
 }
 
 // filterProts filters the given prots for
-func (p *Prots) filter(reqAccess string) (Prots, error) {
+func (ps *Prots) filter(reqAccess string) Prots {
 	out := Prots{}
 
 	var minA, maxA uint8
@@ -101,26 +107,46 @@ func (p *Prots) filter(reqAccess string) (Prots, error) {
 		minA = permMap["write"]
 		maxA = permMap["write"]
 	}
-	for i := len(*p) - 1; i >= 0; i-- {
-		c := (*p)[i]
+	for i := len(*ps) - 1; i >= 0; i-- {
+		c := (*ps)[i]
 		// TODO this won't work if there are only groups available above the reqAccess
 		if permMap[c.Perm] >= minA && permMap[c.Perm] <= maxA {
 			out = append(out, c)
 		}
 	}
 
-	return out, nil
+	return out
 }
 
-// (p *Prots) sort()
+// sort reorders the given protections so that the closer the path is, the earlier it is
+func (ps *Prots) sort(path string) Prots {
+	out := *ps
+	// Stable means protections with the same number of segments are returned in reverse order
+	// of the protections table
+	sort.SliceStable(out, func(i, j int) bool {
+		return (*ps)[i].Segments > (*ps)[j].Segments
+	})
+	return out
+}
 
 // Advise running user on probable group to join
 // Returns one or more possible protections in order of how likely they are correct
-func (p *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, error) {
+func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, error) {
+	// TODO Check !hasAccess
 	// TODO Check that reqAccess is read or write only
 	// Filter the prots for those that matter
-	out, err := p.filter(reqAccess)
-	return out, err
+	psf := ps.filter(reqAccess)
+	psf = psf.sort(path)
+	l := psf[0].Segments
+	out := Prots{psf[0]}
+
+	for i, p := range out {
+		if i > 0 && p.Segments == l {
+			out = append(out, p)
+		}
+	}
+
+	return out, nil
 }
 
 // hasAccess checks whether the given user already has access

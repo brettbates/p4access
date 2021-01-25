@@ -40,6 +40,7 @@ var protTests = []protTest{
 			Line:      1,
 			DepotFile: "//...",
 			Unmap:     false,
+			Segments:  1,
 		}},
 	},
 	{input: []map[interface{}]interface{}{{
@@ -59,6 +60,7 @@ var protTests = []protTest{
 			Line:      1,
 			DepotFile: "//...",
 			Unmap:     false,
+			Segments:  1,
 		}},
 	},
 	{
@@ -88,6 +90,7 @@ var protTests = []protTest{
 				Line:      1,
 				DepotFile: "//...",
 				Unmap:     false,
+				Segments:  1,
 			}, {
 				Perm:      "list",
 				Host:      "*",
@@ -96,6 +99,7 @@ var protTests = []protTest{
 				Line:      2,
 				DepotFile: "//depot/...",
 				Unmap:     true,
+				Segments:  2,
 			}},
 	},
 }
@@ -207,6 +211,7 @@ var adviseTests = []adviseTest{
 				Line:      1,
 				DepotFile: "//...",
 				Unmap:     false,
+				Segments:  1,
 			}}},
 		want: Prots{{
 			Perm:      "write",
@@ -216,6 +221,7 @@ var adviseTests = []adviseTest{
 			Line:      1,
 			DepotFile: "//...",
 			Unmap:     false,
+			Segments:  1,
 		}},
 		err: nil,
 	},
@@ -233,6 +239,7 @@ var adviseTests = []adviseTest{
 					Line:      1,
 					DepotFile: "//...",
 					Unmap:     false,
+					Segments:  1,
 				},
 				{
 					Perm:      "read",
@@ -242,6 +249,7 @@ var adviseTests = []adviseTest{
 					Line:      2,
 					DepotFile: "//depot/...",
 					Unmap:     false,
+					Segments:  2,
 				}}},
 		want: Prots{{
 			Perm:      "read",
@@ -251,6 +259,46 @@ var adviseTests = []adviseTest{
 			Line:      2,
 			DepotFile: "//depot/...",
 			Unmap:     false,
+			Segments:  2,
+		}},
+		err: nil,
+	},
+	{ // Request read with read and open available
+		input: adviseInput{
+			"usr",
+			"//depot/path/afile",
+			"read",
+			Prots{
+				{
+					Perm:      "open",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//...",
+					Unmap:     false,
+					Segments:  1,
+				},
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				}}},
+		// I only want to know of the closer 2nd line
+		want: Prots{{
+			Perm:      "read",
+			Host:      "host",
+			User:      "grp2",
+			IsGroup:   true,
+			Line:      2,
+			DepotFile: "//depot/...",
+			Unmap:     false,
+			Segments:  2,
 		}},
 		err: nil,
 	},
@@ -261,8 +309,8 @@ func TestAdvise(t *testing.T) {
 	for _, tst := range adviseTests {
 		fp4 := &FakeP4Runner{}
 		fp4.On("Run", []string{"protects", "-M", "-u", tst.input.user, tst.input.path}).Return("none", nil)
-		// The below isn't right. We shouldn't always return super
-		fp4.On("Run", []string{"protects", "-M", "-g", tst.input.user, tst.input.path}).Return("super", nil)
+		// TODO check that the group gives the correct access? or are we sure
+		// fp4.On("Run", []string{"protects", "-M", "-g", tst.input.user, tst.input.path}).Return("super", nil)
 		res, err := tst.input.prots.Advise(fp4, tst.input.user, tst.input.path, tst.input.reqAccess)
 		assert := assert.New(t)
 		if tst.err == nil {
