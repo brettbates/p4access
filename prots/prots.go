@@ -97,9 +97,11 @@ func Protections(p4r P4Runner, path string) (Prots, error) {
 }
 
 // filterProts filters the given prots for
-func (ps *Prots) filter(reqAccess string) Prots {
+func (ps *Prots) filter(p4r P4Runner, path, reqAccess string) (Prots, error) {
 	out := Prots{}
 
+	// read can be read or open, write is just write
+	// TODO may need to make this configurable
 	var minA, maxA uint8
 	if reqAccess == "read" {
 		minA = permMap["read"]
@@ -108,15 +110,33 @@ func (ps *Prots) filter(reqAccess string) Prots {
 		minA = permMap["write"]
 		maxA = permMap["write"]
 	}
+
+	// Reverse prots and filter out non-matching prots
 	for i := len(*ps) - 1; i >= 0; i-- {
 		c := (*ps)[i]
 		// TODO this won't work if there are only groups available above the reqAccess
+		// Should we re-run failing read requests with write after?
 		if permMap[c.Perm] >= minA && permMap[c.Perm] <= maxA {
-			out = append(out, c)
+			// Check that the group actually gives the correct access
+			res, err := p4r.Run([]string{"protects", "-M", "-g", c.User, path})
+			if err != nil {
+				return nil, err
+			}
+
+			var permMax uint8
+			if v, ok := res[0]["permMax"]; ok {
+				permMax = permMap[v.(string)]
+			} else {
+				permMax = permMap["none"]
+			}
+
+			if permMax >= permMap[reqAccess] {
+				out = append(out, c)
+			}
 		}
 	}
 
-	return out
+	return out, nil
 }
 
 // sort reorders the given protections so that the closer the path is, the earlier it is
@@ -143,7 +163,10 @@ func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, erro
 	}
 
 	// Filter the prots for those that matter
-	psf := ps.filter(reqAccess)
+	psf, err := ps.filter(p4r, path, reqAccess)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to filter %v", err)
+	}
 	psf = psf.sort(path)
 	l := psf[0].Segments
 	out := Prots{psf[0]}
