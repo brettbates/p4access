@@ -1,6 +1,7 @@
 package prots
 
 import (
+	"errors"
 	"log"
 	"sort"
 	"strconv"
@@ -134,6 +135,12 @@ func (ps *Prots) sort(path string) Prots {
 func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, error) {
 	// TODO Check !hasAccess
 	// TODO Check that reqAccess is read or write only
+	a, err := hasAccess(p4r, user, path, reqAccess)
+	if err != nil {
+		return nil, err
+	} else if a {
+		return nil, errors.New("User usr already has super access to //depot/hasAccess")
+	}
 	// Filter the prots for those that matter
 	psf := ps.filter(reqAccess)
 	psf = psf.sort(path)

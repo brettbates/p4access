@@ -198,7 +198,25 @@ type adviseTest struct {
 }
 
 var adviseTests = []adviseTest{
-	{
+	{ // This should fail as the user already has acccess
+		input: adviseInput{
+			"usr",
+			"//depot/hasAccess",
+			"write",
+			Prots{{
+				Perm:      "write",
+				Host:      "host",
+				User:      "grp",
+				IsGroup:   true,
+				Line:      1,
+				DepotFile: "//...",
+				Unmap:     false,
+				Segments:  1,
+			}}},
+		want: nil,
+		err:  errors.New("User usr already has super access to //depot/hasAccess"),
+	},
+	{ // Very simple test with a correct write group
 		input: adviseInput{
 			"usr",
 			"//depot/path/afile",
@@ -308,7 +326,10 @@ func TestAdvise(t *testing.T) {
 	// Advise the user on which groups, to use
 	for _, tst := range adviseTests {
 		fp4 := &FakeP4Runner{}
-		fp4.On("Run", []string{"protects", "-M", "-u", tst.input.user, tst.input.path}).Return("none", nil)
+		pnone := []map[interface{}]interface{}{{"permMax": "none"}}
+		psuper := []map[interface{}]interface{}{{"permMax": "super"}}
+		fp4.On("Run", []string{"protects", "-M", "-u", tst.input.user, "//depot/hasAccess"}).Return(psuper, nil).
+			On("Run", []string{"protects", "-M", "-u", tst.input.user, tst.input.path}).Return(pnone, nil)
 		// TODO check that the group gives the correct access? or are we sure
 		// fp4.On("Run", []string{"protects", "-M", "-g", tst.input.user, tst.input.path}).Return("super", nil)
 		res, err := tst.input.prots.Advise(fp4, tst.input.user, tst.input.path, tst.input.reqAccess)
