@@ -332,6 +332,25 @@ var adviseTests = []adviseTest{
 		want: nil,
 		err:  errors.New("User usr already has write access or higher to //depot/hasAccess"),
 	},
+	{ // This should fail as we aren't requesting read or write
+		// TODO Move this to the command line parsing func
+		input: adviseInput{
+			"usr",
+			"//depot/hasAccess",
+			"super",
+			Prots{{
+				Perm:      "write",
+				Host:      "host",
+				User:      "grp",
+				IsGroup:   true,
+				Line:      1,
+				DepotFile: "//...",
+				Unmap:     false,
+				Segments:  1,
+			}}},
+		want: nil,
+		err:  errors.New("Must request either read or write access"),
+	},
 	{ // Very simple test with a correct write group
 		input: adviseInput{
 			"usr",

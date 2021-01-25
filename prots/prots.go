@@ -1,6 +1,7 @@
 package prots
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -153,7 +154,10 @@ func (ps *Prots) sort(path string) Prots {
 // Advise running user on probable group to join
 // Returns one or more possible protections in order of how likely they are correct
 func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, error) {
-	// TODO Check that reqAccess is read or write only
+	// TODO Move this to the command line parsing func
+	if reqAccess != "read" && reqAccess != "write" {
+		return nil, errors.New("Must request either read or write access")
+	}
 
 	a, err := hasAccess(p4r, user, path, reqAccess)
 	if err != nil {
