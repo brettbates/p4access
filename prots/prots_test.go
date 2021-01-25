@@ -319,6 +319,96 @@ var adviseTests = []adviseTest{
 		}},
 		err: nil,
 	},
+	{ // Request read with read and open available reverse order
+		input: adviseInput{
+			"usr",
+			"//depot/path/afile",
+			"read",
+			Prots{
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+				{
+					Perm:      "open",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//...",
+					Unmap:     false,
+					Segments:  1,
+				},
+			}},
+		// I only want to know of the closer 1st line
+		want: Prots{{
+			Perm:      "read",
+			Host:      "host",
+			User:      "grp2",
+			IsGroup:   true,
+			Line:      1,
+			DepotFile: "//depot/...",
+			Unmap:     false,
+			Segments:  2,
+		}},
+		err: nil,
+	},
+	{ // Request read with read, open and write available, differing reads
+		input: adviseInput{
+			"usr",
+			"//depot/path/afile",
+			"read",
+			Prots{
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+				{
+					Perm:      "open",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//...",
+					Unmap:     false,
+					Segments:  1,
+				},
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      3,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  1,
+				},
+			}},
+		// I only want to know of the closer 1st line
+		want: Prots{{
+			Perm:      "read",
+			Host:      "host",
+			User:      "grp2",
+			IsGroup:   true,
+			Line:      1,
+			DepotFile: "//depot/...",
+			Unmap:     false,
+			Segments:  2,
+		}},
+		err: nil,
+	},
 }
 
 func TestAdvise(t *testing.T) {
