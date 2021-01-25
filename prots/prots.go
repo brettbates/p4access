@@ -1,7 +1,7 @@
 package prots
 
 import (
-	"errors"
+	"fmt"
 	"log"
 	"sort"
 	"strconv"
@@ -139,7 +139,7 @@ func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, erro
 	if err != nil {
 		return nil, err
 	} else if a {
-		return nil, errors.New("User usr already has super access to //depot/hasAccess")
+		return nil, fmt.Errorf("User %s already has %s access or higher to %s", user, reqAccess, path)
 	}
 	// Filter the prots for those that matter
 	psf := ps.filter(reqAccess)
