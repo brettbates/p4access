@@ -19,7 +19,7 @@ func (mock *FakeP4Runner) Run(args []string) ([]map[interface{}]interface{}, err
 
 type protTest struct {
 	input []map[interface{}]interface{}
-	want  []Prot
+	want  Prots
 }
 
 var protTests = []protTest{
@@ -31,7 +31,7 @@ var protTests = []protTest{
 		"depotFile": "//...",
 		// No unmap, so should be false
 	}},
-		want: []Prot{{
+		want: Prots{{
 			Perm:      "super",
 			Host:      "host",
 			User:      "user",
@@ -39,6 +39,7 @@ var protTests = []protTest{
 			Line:      1,
 			DepotFile: "//...",
 			Unmap:     false,
+			Segments:  1,
 		}},
 	},
 	{input: []map[interface{}]interface{}{{
@@ -50,7 +51,7 @@ var protTests = []protTest{
 		"depotFile": "//...",
 		// No unmap, so should be false
 	}},
-		want: []Prot{{
+		want: Prots{{
 			Perm:      "super",
 			Host:      "host",
 			User:      "grp",
@@ -58,6 +59,7 @@ var protTests = []protTest{
 			Line:      1,
 			DepotFile: "//...",
 			Unmap:     false,
+			Segments:  1,
 		}},
 	},
 	{
@@ -78,7 +80,7 @@ var protTests = []protTest{
 				"line":      "2",
 				"depotFile": "//depot/...",
 			}},
-		want: []Prot{
+		want: Prots{
 			{
 				Perm:      "super",
 				Host:      "host",
@@ -87,6 +89,7 @@ var protTests = []protTest{
 				Line:      1,
 				DepotFile: "//...",
 				Unmap:     false,
+				Segments:  1,
 			}, {
 				Perm:      "list",
 				Host:      "*",
@@ -95,6 +98,7 @@ var protTests = []protTest{
 				Line:      2,
 				DepotFile: "//depot/...",
 				Unmap:     true,
+				Segments:  2,
 			}},
 	},
 }
@@ -175,6 +179,526 @@ func TestHasAccess(t *testing.T) {
 		} else {
 			assert.EqualError(err, tst.err.Error())
 		}
-		assert.Equal(res, tst.want)
+		assert.Equal(tst.want, res)
 	}
 }
+<<<<<<< HEAD
+=======
+
+type filterInput struct {
+	path      string
+	reqAccess string
+	prots     Prots
+}
+
+type filterTest struct {
+	input filterInput
+	want  Prots
+	err   error
+}
+
+var filterTests = []filterTest{
+	{ // We should return the input prots
+		input: filterInput{
+			"//depot/mapped",
+			"write",
+			Prots{{
+				Perm:      "write",
+				Host:      "host",
+				User:      "grp",
+				IsGroup:   true,
+				Line:      1,
+				DepotFile: "//...",
+				Unmap:     false,
+				Segments:  1,
+			}},
+		},
+		want: Prots{
+			{
+				Perm:      "write",
+				Host:      "host",
+				User:      "grp",
+				IsGroup:   true,
+				Line:      1,
+				DepotFile: "//...",
+				Unmap:     false,
+				Segments:  1,
+			},
+		},
+		err: nil,
+	},
+	{
+		input: filterInput{
+			"//depot/unmapped",
+			"write",
+			Prots{
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//...",
+					Unmap:     false,
+					Segments:  1,
+				},
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//depot/...",
+					Unmap:     true,
+					Segments:  2,
+				},
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      3,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+			},
+		},
+		want: Prots{
+			{
+				Perm:      "write",
+				Host:      "host",
+				User:      "grp2",
+				IsGroup:   true,
+				Line:      3,
+				DepotFile: "//depot/...",
+				Unmap:     false,
+				Segments:  2,
+			},
+		},
+		err: nil,
+	},
+}
+
+func TestFilter(t *testing.T) {
+	// Advise the user on which groups, to use
+	for _, tst := range filterTests {
+		fp4 := &FakeP4Runner{}
+		pnone := []map[interface{}]interface{}{{"permMax": "none"}}
+		pwrite := []map[interface{}]interface{}{{"permMax": "write"}}
+		fp4.On("Run", []string{"protects", "-M", "-g", "grp", "//depot/mapped"}).Return(pwrite, nil).
+			On("Run", []string{"protects", "-M", "-g", "grp", "//depot/unmapped"}).Return(pnone, nil).
+			On("Run", []string{"protects", "-M", "-g", "grp2", "//depot/unmapped"}).Return(pwrite, nil)
+		// TODO check that the group gives the correct access? or are we sure already
+		// fp4.On("Run", []string{"protects", "-M", "-g", tst.input.user, tst.input.path}).Return("super", nil)
+		res, err := tst.input.prots.filter(fp4, tst.input.path, tst.input.reqAccess)
+		assert := assert.New(t)
+		if tst.err == nil {
+			assert.Nil(err)
+		} else {
+			assert.EqualError(err, tst.err.Error())
+		}
+		assert.Equal(tst.want, res)
+	}
+}
+
+type adviseInput struct {
+	user      string
+	path      string
+	reqAccess string
+	prots     Prots
+}
+
+type adviseTest struct {
+	input adviseInput
+	want  Prots
+	err   error
+}
+
+var adviseTests = []adviseTest{
+	{ // This should fail as the user already has acccess
+		input: adviseInput{
+			"usr",
+			"//depot/hasAccess",
+			"write",
+			Prots{{
+				Perm:      "write",
+				Host:      "host",
+				User:      "grp",
+				IsGroup:   true,
+				Line:      1,
+				DepotFile: "//...",
+				Unmap:     false,
+				Segments:  1,
+			}}},
+		want: nil,
+		err:  errors.New("User usr already has write access or higher to //depot/hasAccess"),
+	},
+	{ // This should fail as we aren't requesting read or write
+		// TODO Move this to the command line parsing func
+		input: adviseInput{
+			"usr",
+			"//depot/hasAccess",
+			"super",
+			Prots{{
+				Perm:      "write",
+				Host:      "host",
+				User:      "grp",
+				IsGroup:   true,
+				Line:      1,
+				DepotFile: "//...",
+				Unmap:     false,
+				Segments:  1,
+			}}},
+		want: nil,
+		err:  errors.New("Must request either read or write access"),
+	},
+	{ // Very simple test with a correct write group
+		input: adviseInput{
+			"usr",
+			"//depot/path/afile",
+			"write",
+			Prots{{
+				Perm:      "write",
+				Host:      "host",
+				User:      "grp",
+				IsGroup:   true,
+				Line:      1,
+				DepotFile: "//...",
+				Unmap:     false,
+				Segments:  1,
+			}}},
+		want: Prots{{
+			Perm:      "write",
+			Host:      "host",
+			User:      "grp",
+			IsGroup:   true,
+			Line:      1,
+			DepotFile: "//...",
+			Unmap:     false,
+			Segments:  1,
+		}},
+		err: nil,
+	},
+	{ // Correct group following higher access group
+		input: adviseInput{
+			"usr",
+			"//depot/path/afile",
+			"read",
+			Prots{
+				{
+					Perm:      "super",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//...",
+					Unmap:     false,
+					Segments:  1,
+				},
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				}}},
+		want: Prots{{
+			Perm:      "read",
+			Host:      "host",
+			User:      "grp2",
+			IsGroup:   true,
+			Line:      2,
+			DepotFile: "//depot/...",
+			Unmap:     false,
+			Segments:  2,
+		}},
+		err: nil,
+	},
+	{ // Request read with read and open available
+		input: adviseInput{
+			"usr",
+			"//depot/path/afile",
+			"read",
+			Prots{
+				{
+					Perm:      "open",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//...",
+					Unmap:     false,
+					Segments:  1,
+				},
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				}}},
+		// I only want to know of the closer 2nd line
+		want: Prots{{
+			Perm:      "read",
+			Host:      "host",
+			User:      "grp2",
+			IsGroup:   true,
+			Line:      2,
+			DepotFile: "//depot/...",
+			Unmap:     false,
+			Segments:  2,
+		}},
+		err: nil,
+	},
+	{ // Request read with read and open available reverse order
+		input: adviseInput{
+			"usr",
+			"//depot/path/afile",
+			"read",
+			Prots{
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+				{
+					Perm:      "open",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//...",
+					Unmap:     false,
+					Segments:  1,
+				},
+			}},
+		// I only want to know of the closer 1st line
+		want: Prots{{
+			Perm:      "read",
+			Host:      "host",
+			User:      "grp2",
+			IsGroup:   true,
+			Line:      1,
+			DepotFile: "//depot/...",
+			Unmap:     false,
+			Segments:  2,
+		}},
+		err: nil,
+	},
+	{ // Request read with read, open and write available, differing reads
+		input: adviseInput{
+			"usr",
+			"//depot/path/afile",
+			"read",
+			Prots{
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+				{
+					Perm:      "open",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//...",
+					Unmap:     false,
+					Segments:  1,
+				},
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      3,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+			}},
+		// I only want to know of the closer 1st line
+		want: Prots{{
+			Perm:      "read",
+			Host:      "host",
+			User:      "grp2",
+			IsGroup:   true,
+			Line:      1,
+			DepotFile: "//depot/...",
+			Unmap:     false,
+			Segments:  2,
+		}},
+		err: nil,
+	},
+	{ // Request read with read, open and write available, same read paths
+		input: adviseInput{
+			"usr",
+			"//depot/path/afile",
+			"read",
+			Prots{
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+				{
+					Perm:      "open",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      3,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+			}},
+		// We should get both groups read groups back as they give the same
+		// It will be up to the user which they pick
+		want: Prots{
+			{
+				Perm:      "open",
+				Host:      "host",
+				User:      "grp",
+				IsGroup:   true,
+				Line:      2,
+				DepotFile: "//depot/...",
+				Unmap:     false,
+				Segments:  2,
+			},
+			{
+				Perm:      "read",
+				Host:      "host",
+				User:      "grp2",
+				IsGroup:   true,
+				Line:      1,
+				DepotFile: "//depot/...",
+				Unmap:     false,
+				Segments:  2,
+			},
+		},
+		err: nil,
+	},
+	{
+		// Request read with read, open and write available, same read paths
+		// Unmap between reads
+		input: adviseInput{
+			"usr",
+			"//unmap/path/afile",
+			"read",
+			Prots{
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grpunmap",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//unmap/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grpunmap",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//unmap/...",
+					Unmap:     true,
+					Segments:  2,
+				},
+				{
+					Perm:      "open",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      3,
+					DepotFile: "//unmap/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      4,
+					DepotFile: "//unmap/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+			}},
+		// We should only get the open
+		want: Prots{
+			{
+				Perm:      "open",
+				Host:      "host",
+				User:      "grp",
+				IsGroup:   true,
+				Line:      3,
+				DepotFile: "//unmap/...",
+				Unmap:     false,
+				Segments:  2,
+			},
+		},
+		err: nil,
+	},
+}
+
+func TestAdvise(t *testing.T) {
+	// Advise the user on which groups, to use
+	for _, tst := range adviseTests {
+		fp4 := &FakeP4Runner{}
+		pnone := []map[interface{}]interface{}{{"permMax": "none"}}
+		pwrite := []map[interface{}]interface{}{{"permMax": "write"}}
+		psuper := []map[interface{}]interface{}{{"permMax": "super"}}
+		fp4.On("Run", []string{"protects", "-M", "-u", tst.input.user, "//depot/hasAccess"}).Return(psuper, nil).
+			On("Run", []string{"protects", "-M", "-u", tst.input.user, tst.input.path}).Return(pnone, nil).
+			On("Run", []string{"protects", "-M", "-g", "grpunmap", "//unmap/path/afile"}).Return(pnone, nil).
+			On("Run", []string{"protects", "-M", "-g", "grp", "//unmap/path/afile"}).Return(pwrite, nil).
+			On("Run", []string{"protects", "-M", "-g", "grp", tst.input.path}).Return(pwrite, nil).
+			On("Run", []string{"protects", "-M", "-g", "grp2", tst.input.path}).Return(pwrite, nil)
+		// TODO check that the group gives the correct access? or are we sure already
+		// fp4.On("Run", []string{"protects", "-M", "-g", tst.input.user, tst.input.path}).Return("super", nil)
+		res, err := tst.input.prots.Advise(fp4, tst.input.user, tst.input.path, tst.input.reqAccess)
+		assert := assert.New(t)
+		if tst.err == nil {
+			assert.Nil(err)
+		} else {
+			assert.EqualError(err, tst.err.Error())
+		}
+		assert.Equal(tst.want, res)
+	}
+}
+>>>>>>> advise

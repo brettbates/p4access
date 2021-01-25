@@ -1,8 +1,12 @@
 package prots
 
 import (
+	"errors"
+	"fmt"
 	"log"
+	"sort"
 	"strconv"
+	"strings"
 
 	p4 "github.com/rcowham/go-libp4"
 )
@@ -12,12 +16,20 @@ type P4Runner interface {
 	Run([]string) ([]map[interface{}]interface{}, error)
 }
 
+<<<<<<< HEAD
 // P4C wraps the P4 library so we can mock it easily
+=======
+// P4C Is a wrapper around the p4 connection
+>>>>>>> advise
 type P4C struct {
 	p4.P4
 }
 
+<<<<<<< HEAD
 // NewP4C returns a connected P4C instance
+=======
+// NewP4C connects to p4 and returns a P4C wrapper
+>>>>>>> advise
 func NewP4C() *P4C {
 	return &P4C{P4: *p4.NewP4()}
 }
@@ -48,16 +60,20 @@ type Prot struct {
 	IsGroup   bool
 	Line      int
 	DepotFile string
+	Segments  int
 }
 
+// Prots is a set of protections
+type Prots []Prot
+
 // Protections takes a path in p4 depot syntax
-func Protections(p4r P4Runner, path string) ([]Prot, error) {
+func Protections(p4r P4Runner, path string) (Prots, error) {
 	res, err := p4r.Run([]string{"protects", "-a", path})
 	if err != nil {
 		log.Printf("Failed to get protects for %s\nRes: %v\nErr: %v\n", path, res, err)
 	}
 
-	prots := []Prot{}
+	prots := Prots{}
 	for _, r := range res {
 		p := Prot{}
 		if v, ok := r["perm"]; ok {
@@ -81,18 +97,104 @@ func Protections(p4r P4Runner, path string) ([]Prot, error) {
 		if _, ok := r["isgroup"]; ok {
 			p.IsGroup = ok
 		}
+		p.Segments = len(strings.FieldsFunc(p.DepotFile, func(c rune) bool {
+			return c == '/'
+		}))
 		prots = append(prots, p)
 	}
 	return prots, err
 }
 
-// MaxAccess gets the maximum access level for a user/group at given path
-func MaxAccess(prots []Prot, user string) (access string) {
-	return "none"
+// filterProts filters the given prots for
+func (ps *Prots) filter(p4r P4Runner, path, reqAccess string) (Prots, error) {
+	out := Prots{}
+
+	// read can be read or open, write is just write
+	// TODO may need to make this configurable
+	var minA, maxA uint8
+	if reqAccess == "read" {
+		minA = permMap["read"]
+		maxA = permMap["open"]
+	} else if reqAccess == "write" {
+		minA = permMap["write"]
+		maxA = permMap["write"]
+	}
+
+	// Reverse prots and filter out non-matching prots
+	for i := len(*ps) - 1; i >= 0; i-- {
+		c := (*ps)[i]
+		// TODO this won't work if there are only groups available above the reqAccess
+		// Should we re-run failing read requests with write after?
+		if permMap[c.Perm] >= minA && permMap[c.Perm] <= maxA {
+			// Check that the group actually gives the correct access
+			res, err := p4r.Run([]string{"protects", "-M", "-g", c.User, path})
+			if err != nil {
+				return nil, err
+			}
+
+			var permMax uint8
+			if v, ok := res[0]["permMax"]; ok {
+				permMax = permMap[v.(string)]
+			} else {
+				permMax = permMap["none"]
+			}
+
+			if permMax >= permMap[reqAccess] {
+				out = append(out, c)
+			}
+		}
+	}
+
+	return out, nil
+}
+
+// sort reorders the given protections so that the closer the path is, the earlier it is
+func (ps *Prots) sort(path string) Prots {
+	out := *ps
+	// Stable means protections with the same number of segments are returned in reverse order
+	// of the protections table
+	sort.SliceStable(out, func(i, j int) bool {
+		return (*ps)[i].Segments > (*ps)[j].Segments
+	})
+	return out
+}
+
+// Advise running user on probable group to join
+// Returns one or more possible protections in order of how likely they are correct
+func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, error) {
+	// TODO Move this to the command line parsing func
+	if reqAccess != "read" && reqAccess != "write" {
+		return nil, errors.New("Must request either read or write access")
+	}
+
+	a, err := hasAccess(p4r, user, path, reqAccess)
+	if err != nil {
+		return nil, err
+	} else if a {
+		return nil, fmt.Errorf("User %s already has %s access or higher to %s", user, reqAccess, path)
+	}
+
+	// Filter the prots for those that matter
+	psf, err := ps.filter(p4r, path, reqAccess)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to filter %v", err)
+	}
+	psf = psf.sort(path)
+	l := psf[0].Segments
+	out := Prots{psf[0]}
+
+	// All matching prots with the same Segments length should be returned
+	for i, p := range psf {
+		if i > 0 && p.Segments == l {
+			out = append(out, p)
+		}
+	}
+
+	return out, nil
 }
 
 // hasAccess checks whether the given user already has access
-func hasAccess(p4r P4Runner, user string, path string, reqAccess string) (bool, error) {
+func hasAccess(p4r P4Runner, user, path, reqAccess string) (bool, error) {
 	res, err := p4r.Run([]string{"protects", "-M", "-u", user, path})
 	if err != nil {
 		log.Printf("\nFailed to run protects for user %s to path %s\n%v\n", user, path, err)
