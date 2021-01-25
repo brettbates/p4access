@@ -133,21 +133,23 @@ func (ps *Prots) sort(path string) Prots {
 // Advise running user on probable group to join
 // Returns one or more possible protections in order of how likely they are correct
 func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, error) {
-	// TODO Check !hasAccess
 	// TODO Check that reqAccess is read or write only
+
 	a, err := hasAccess(p4r, user, path, reqAccess)
 	if err != nil {
 		return nil, err
 	} else if a {
 		return nil, fmt.Errorf("User %s already has %s access or higher to %s", user, reqAccess, path)
 	}
+
 	// Filter the prots for those that matter
 	psf := ps.filter(reqAccess)
 	psf = psf.sort(path)
 	l := psf[0].Segments
 	out := Prots{psf[0]}
 
-	for i, p := range out {
+	// All matching prots with the same Segments length should be returned
+	for i, p := range psf {
 		if i > 0 && p.Segments == l {
 			out = append(out, p)
 		}

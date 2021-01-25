@@ -393,7 +393,7 @@ var adviseTests = []adviseTest{
 					Line:      3,
 					DepotFile: "//depot/...",
 					Unmap:     false,
-					Segments:  1,
+					Segments:  2,
 				},
 			}},
 		// I only want to know of the closer 1st line
@@ -407,6 +407,69 @@ var adviseTests = []adviseTest{
 			Unmap:     false,
 			Segments:  2,
 		}},
+		err: nil,
+	},
+	{ // Request read with read, open and write available, same read paths
+		input: adviseInput{
+			"usr",
+			"//depot/path/afile",
+			"read",
+			Prots{
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+				{
+					Perm:      "open",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      3,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+			}},
+		// We should get both groups read groups back as they give the same
+		// It will be up to the user which they pick
+		want: Prots{
+			{
+				Perm:      "open",
+				Host:      "host",
+				User:      "grp",
+				IsGroup:   true,
+				Line:      2,
+				DepotFile: "//depot/...",
+				Unmap:     false,
+				Segments:  2,
+			},
+			{
+				Perm:      "read",
+				Host:      "host",
+				User:      "grp2",
+				IsGroup:   true,
+				Line:      1,
+				DepotFile: "//depot/...",
+				Unmap:     false,
+				Segments:  2,
+			},
+		},
 		err: nil,
 	},
 }
