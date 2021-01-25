@@ -20,7 +20,7 @@ func (mock *FakeP4Runner) Run(args []string) ([]map[interface{}]interface{}, err
 
 type protTest struct {
 	input []map[interface{}]interface{}
-	want  []Prot
+	want  Prots
 }
 
 var protTests = []protTest{
@@ -32,7 +32,7 @@ var protTests = []protTest{
 		"depotFile": "//...",
 		// No unmap, so should be false
 	}},
-		want: []Prot{{
+		want: Prots{{
 			Perm:      "super",
 			Host:      "host",
 			User:      "user",
@@ -51,7 +51,7 @@ var protTests = []protTest{
 		"depotFile": "//...",
 		// No unmap, so should be false
 	}},
-		want: []Prot{{
+		want: Prots{{
 			Perm:      "super",
 			Host:      "host",
 			User:      "grp",
@@ -79,7 +79,7 @@ var protTests = []protTest{
 				"line":      "2",
 				"depotFile": "//depot/...",
 			}},
-		want: []Prot{
+		want: Prots{
 			{
 				Perm:      "super",
 				Host:      "host",
@@ -176,7 +176,7 @@ func TestHasAccess(t *testing.T) {
 		} else {
 			assert.EqualError(err, tst.err.Error())
 		}
-		assert.Equal(res, tst.want)
+		assert.Equal(tst.want, res)
 	}
 }
 
@@ -184,12 +184,12 @@ type adviseInput struct {
 	user      string
 	path      string
 	reqAccess string
-	prots     []Prot
+	prots     Prots
 }
 
 type adviseTest struct {
 	input adviseInput
-	want  []Prot
+	want  Prots
 	err   error
 }
 
@@ -198,9 +198,9 @@ var adviseTests = []adviseTest{
 		input: adviseInput{
 			"usr",
 			"//depot/path/afile",
-			"super",
-			[]Prot{{
-				Perm:      "super",
+			"write",
+			Prots{{
+				Perm:      "write",
 				Host:      "host",
 				User:      "grp",
 				IsGroup:   true,
@@ -208,13 +208,48 @@ var adviseTests = []adviseTest{
 				DepotFile: "//...",
 				Unmap:     false,
 			}}},
-		want: []Prot{{
-			Perm:      "super",
+		want: Prots{{
+			Perm:      "write",
 			Host:      "host",
 			User:      "grp",
 			IsGroup:   true,
 			Line:      1,
 			DepotFile: "//...",
+			Unmap:     false,
+		}},
+		err: nil,
+	},
+	{ // Correct group following higher access group
+		input: adviseInput{
+			"usr",
+			"//depot/path/afile",
+			"read",
+			Prots{
+				{
+					Perm:      "super",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//...",
+					Unmap:     false,
+				},
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+				}}},
+		want: Prots{{
+			Perm:      "read",
+			Host:      "host",
+			User:      "grp2",
+			IsGroup:   true,
+			Line:      2,
+			DepotFile: "//depot/...",
 			Unmap:     false,
 		}},
 		err: nil,
@@ -226,15 +261,16 @@ func TestAdvise(t *testing.T) {
 	for _, tst := range adviseTests {
 		fp4 := &FakeP4Runner{}
 		fp4.On("Run", []string{"protects", "-M", "-u", tst.input.user, tst.input.path}).Return("none", nil)
+		// The below isn't right. We shouldn't always return super
 		fp4.On("Run", []string{"protects", "-M", "-g", tst.input.user, tst.input.path}).Return("super", nil)
-		res, err := Advise(fp4, tst.input.user, tst.input.path, tst.input.reqAccess, tst.input.prots)
+		res, err := tst.input.prots.Advise(fp4, tst.input.user, tst.input.path, tst.input.reqAccess)
 		assert := assert.New(t)
 		if tst.err == nil {
 			assert.Nil(err)
 		} else {
 			assert.EqualError(err, tst.err.Error())
 		}
-		assert.Equal(res, tst.want)
+		assert.Equal(tst.want, res)
 		fmt.Printf("%v == %v", res, tst.want)
 	}
 }

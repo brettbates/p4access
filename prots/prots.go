@@ -50,14 +50,17 @@ type Prot struct {
 	DepotFile string
 }
 
+// Prots is a set of protections
+type Prots []Prot
+
 // Protections takes a path in p4 depot syntax
-func Protections(p4r P4Runner, path string) ([]Prot, error) {
+func Protections(p4r P4Runner, path string) (Prots, error) {
 	res, err := p4r.Run([]string{"protects", "-a", path})
 	if err != nil {
 		log.Printf("Failed to get protects for %s\nRes: %v\nErr: %v\n", path, res, err)
 	}
 
-	prots := []Prot{}
+	prots := Prots{}
 	for _, r := range res {
 		p := Prot{}
 		if v, ok := r["perm"]; ok {
@@ -86,16 +89,38 @@ func Protections(p4r P4Runner, path string) ([]Prot, error) {
 	return prots, err
 }
 
-// Advise running user on probable group to join
-func Advise(p4r P4Runner, user, path, reqAccess string, prots []Prot) ([]Prot, error) {
-	out := []Prot{}
-	for i := len(prots) - 1; i >= 0; i-- {
-		c := prots[i]
-		if permMap[c.Perm] >= permMap[reqAccess] {
+// filterProts filters the given prots for
+func (p *Prots) filter(reqAccess string) (Prots, error) {
+	out := Prots{}
+
+	var minA, maxA uint8
+	if reqAccess == "read" {
+		minA = permMap["read"]
+		maxA = permMap["open"]
+	} else if reqAccess == "write" {
+		minA = permMap["write"]
+		maxA = permMap["write"]
+	}
+	for i := len(*p) - 1; i >= 0; i-- {
+		c := (*p)[i]
+		// TODO this won't work if there are only groups available above the reqAccess
+		if permMap[c.Perm] >= minA && permMap[c.Perm] <= maxA {
 			out = append(out, c)
 		}
 	}
+
 	return out, nil
+}
+
+// (p *Prots) sort()
+
+// Advise running user on probable group to join
+// Returns one or more possible protections in order of how likely they are correct
+func (p *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, error) {
+	// TODO Check that reqAccess is read or write only
+	// Filter the prots for those that matter
+	out, err := p.filter(reqAccess)
+	return out, err
 }
 
 // hasAccess checks whether the given user already has access
