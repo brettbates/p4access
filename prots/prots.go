@@ -16,20 +16,12 @@ type P4Runner interface {
 	Run([]string) ([]map[interface{}]interface{}, error)
 }
 
-<<<<<<< HEAD
-// P4C wraps the P4 library so we can mock it easily
-=======
 // P4C Is a wrapper around the p4 connection
->>>>>>> advise
 type P4C struct {
 	p4.P4
 }
 
-<<<<<<< HEAD
-// NewP4C returns a connected P4C instance
-=======
 // NewP4C connects to p4 and returns a P4C wrapper
->>>>>>> advise
 func NewP4C() *P4C {
 	return &P4C{P4: *p4.NewP4()}
 }

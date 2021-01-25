@@ -182,8 +182,6 @@ func TestHasAccess(t *testing.T) {
 		assert.Equal(tst.want, res)
 	}
 }
-<<<<<<< HEAD
-=======
 
 type filterInput struct {
 	path      string
@@ -701,4 +699,3 @@ func TestAdvise(t *testing.T) {
 		assert.Equal(tst.want, res)
 	}
 }
->>>>>>> advise
