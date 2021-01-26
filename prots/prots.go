@@ -66,6 +66,8 @@ func (p Prot) owners(p4r P4Runner) ([]string, error) {
 	i := 0
 	r := res[0]
 	out := []string{}
+	// There is an indeterminate amount of OwnersX: owner.name
+	// so we have to just try them all until we run out
 	for {
 		key := fmt.Sprintf("Owners%d", i)
 		if v, ok := r[key]; ok {
@@ -129,17 +131,21 @@ type Info struct {
 }
 
 // OutputInfo prepares the output for use in a template
-func (ps *Prots) OutputInfo(path, reqAccess string) []Info {
+func (ps *Prots) OutputInfo(p4r P4Runner, path, reqAccess string) ([]Info, error) {
 	out := []Info{}
 	for _, p := range *ps {
+		owners, err := p.owners(p4r)
+		if err != nil {
+			return nil, err
+		}
 		out = append(out, Info{
 			path,
 			reqAccess,
 			p.User,
-			[]string{"o1"},
+			owners,
 		})
 	}
-	return out
+	return out, nil
 }
 
 // filterProts filters the given prots for

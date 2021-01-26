@@ -17,13 +17,17 @@ type args struct {
 	path      string
 }
 
-func output(ps prots.Prots, args args) {
+func output(p4r prots.P4Runner, ps prots.Prots, args args) {
 	tmp, err := ioutil.ReadFile("response.txt")
 	if err != nil {
 		log.Fatalln("Failed to find answer.txt template")
 	}
 	t := template.Must(template.New("response").Parse(string(tmp)))
-	out := struct{ Groups []prots.Info }{Groups: ps.OutputInfo(args.path, args.reqAccess)}
+	info, err := ps.OutputInfo(p4r, args.path, args.reqAccess)
+	if err != nil {
+		log.Fatalf("Failed to retrieve the output data %v", err)
+	}
+	out := struct{ Groups []prots.Info }{Groups: info}
 	err = t.Execute(os.Stdout, out)
 	if err != nil {
 		log.Fatalf("Failed to execute template\n%v", err)
@@ -71,5 +75,5 @@ func main() {
 	reject(err)
 	advice, err := res.Advise(p4c, args.user, args.path, args.reqAccess)
 	reject(err)
-	output(advice, args)
+	output(p4c, advice, args)
 }
