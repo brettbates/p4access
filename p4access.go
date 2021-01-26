@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+
+	p4b "github.com/brettbates/p4broker-reader"
 )
 
 // Info is the path and owners of a group
@@ -34,6 +36,10 @@ func output() {
 	if err != nil {
 		log.Fatalf("Failed to execute template\n%v", err)
 	}
+}
+
+func input() {
+	p4b.Read()
 }
 
 func main() {

@@ -8,7 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	p4 "github.com/rcowham/go-libp4"
+	// This should be rcowham/go-libp4, but he needs to accept the pull request
+	p4 "github.com/brettbates/go-libp4"
 )
 
 // P4Runner is an interface for testing without calling p4
