@@ -1,0 +1,9 @@
+{{ range $group, $info := .Groups }}
+    Group "{{ $group }}" grants {{ $info.Access }} access to the path: 
+    
+        {{ $info.Path }}
+
+    You need to contact one of the owners listed: 
+    {{ range $info.Owners }} 
+        {{ . }} {{ end }}
+{{ end }}
