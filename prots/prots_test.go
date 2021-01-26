@@ -699,3 +699,32 @@ func TestAdvise(t *testing.T) {
 		assert.Equal(tst.want, res)
 	}
 }
+
+func TestOwners(t *testing.T) {
+	tst := []map[interface{}]interface{}{{
+		"code":            "stat",
+		"Group":           "P_group_name",
+		"Timeout":         "43200",
+		"Subgroups0":      "A_subgroup",
+		"Users0":          "some.guy",
+		"Users1":          "some.person",
+		"Users3":          "a.user",
+		"Users2":          "not.real",
+		"PasswordTimeout": "unset",
+		"MaxOpenFiles":    "unset",
+		"MaxResults":      "unset",
+		"Owners0":         "owner.first",
+		"Owners1":         "owner.second",
+		"MaxScanRows":     "unset",
+		"MaxLockTime":     "unset",
+	}}
+	tstProt := Prot{IsGroup: true, User: "P_group_name"}
+	fp4 := &FakeP4Runner{}
+	fp4.On("Run", []string{"group", "-o", "P_group_name"}).Return(tst, nil)
+
+	res, err := tstProt.owners(fp4)
+
+	assert := assert.New(t)
+	assert.Nil(err)
+	assert.Equal([]string{"owner.first", "owner.second"}, res)
+}

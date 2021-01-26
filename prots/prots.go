@@ -56,6 +56,28 @@ type Prot struct {
 	Segments  int
 }
 
+// owners returns the owners for a given prots group
+func (p Prot) owners(p4r P4Runner) ([]string, error) {
+	res, err := p4r.Run([]string{"group", "-o", p.User})
+	if err != nil {
+		return nil, err
+	}
+
+	i := 0
+	r := res[0]
+	out := []string{}
+	for {
+		key := fmt.Sprintf("Owners%d", i)
+		if v, ok := r[key]; ok {
+			out = append(out, v.(string))
+			i++
+		} else {
+			break
+		}
+	}
+	return out, nil
+}
+
 // Prots is a set of protections
 type Prots []Prot
 
@@ -96,6 +118,28 @@ func Protections(p4r P4Runner, path string) (Prots, error) {
 		prots = append(prots, p)
 	}
 	return prots, err
+}
+
+// Info is the path and owners of a group
+type Info struct {
+	Path   string
+	Access string
+	Group  string
+	Owners []string
+}
+
+// OutputInfo prepares the output for use in a template
+func (ps *Prots) OutputInfo(path, reqAccess string) []Info {
+	out := []Info{}
+	for _, p := range *ps {
+		out = append(out, Info{
+			path,
+			reqAccess,
+			p.User,
+			[]string{"o1"},
+		})
+	}
+	return out
 }
 
 // filterProts filters the given prots for

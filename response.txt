@@ -1,9 +1,9 @@
-{{ range $group, $info := .Groups }}
-    Group "{{ $group }}" grants {{ $info.Access }} access to the path: 
-    
-        {{ $info.Path }}
+{{ range $group := .Groups }}
+    Group "{{ $group.Group }}" grants {{ $group.Access }} access to the path: 
+
+        {{ $group.Path }}
 
     You need to contact one of the owners listed: 
-    {{ range $info.Owners }} 
+    {{ range $group.Owners }} 
         {{ . }} {{ end }}
 {{ end }}

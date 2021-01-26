@@ -13,19 +13,9 @@ import (
 
 type args struct {
 	user      string
-	path      string
 	reqAccess string
+	path      string
 }
-
-// Info is the path and owners of a group
-type Info struct {
-	Access string
-	Path   string
-	Owners []string
-}
-
-// Groups maps Group names to their path/owners
-type Groups map[string]Info
 
 func output(ps prots.Prots, args args) {
 	tmp, err := ioutil.ReadFile("response.txt")
@@ -33,13 +23,7 @@ func output(ps prots.Prots, args args) {
 		log.Fatalln("Failed to find answer.txt template")
 	}
 	t := template.Must(template.New("response").Parse(string(tmp)))
-	out := struct{ Groups Groups }{Groups: Groups{
-		"Test group": Info{
-			"Read",
-			"Test Path",
-			[]string{"owner 1", "owner 2"},
-		},
-	}}
+	out := struct{ Groups []prots.Info }{Groups: ps.OutputInfo(args.path, args.reqAccess)}
 	err = t.Execute(os.Stdout, out)
 	if err != nil {
 		log.Fatalf("Failed to execute template\n%v", err)
@@ -75,6 +59,7 @@ func reject(err error) {
 		log.Printf("action: REJECT")
 		log.Printf("message: Failed to get protections, please contact support")
 		log.Println(err)
+		panic(err)
 	}
 }
 
