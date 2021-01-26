@@ -27,6 +27,11 @@ func NewP4C() *P4C {
 	return &P4C{P4: *p4.NewP4()}
 }
 
+// NewP4CParams TODO This needs to read from .p4config files
+func NewP4CParams() *P4C {
+	return &P4C{P4: *p4.NewP4Params("<SERVER>:1666", "perforce", "p4access_ws")}
+}
+
 // permMap maps permission levels to their hex value
 var permMap map[string]uint8
 

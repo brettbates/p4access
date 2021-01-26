@@ -1,11 +1,12 @@
-action: PASS
-message: 
+action: RESPOND
+message:  "
 {{ range $group := .Groups }}
-    Group "{{ $group.Group }}" grants {{ $group.Access }} access to the path: 
+    Group {{ $group.Group }} grants {{ $group.Access }} access to the path: 
 
         {{ $group.Path }}
 
-    You need to contact one of the owners listed: 
+    You can get access by contacting one of the owners listed: 
     {{ range $group.Owners }} 
         {{ . }} {{ end }}
 {{ end }}
+"

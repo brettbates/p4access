@@ -1,5 +1,7 @@
 github.com/brettbates/go-libp4 v0.0.0-20210118004444-ac00563760e2 h1:e/oW0cHc2Nv9x2UE56dwhGWbLUzdt4ASbPsN6dcGIgo=
 github.com/brettbates/go-libp4 v0.0.0-20210118004444-ac00563760e2/go.mod h1:+Tqe3D/t3/k4WzG868MUCH5lqb72jZU3ZuXTrk4Eev4=
+github.com/brettbates/go-libp4 v0.1.0 h1:uQQeGVjMWkKKqLoHMXUT2xK6AkeJ4u7/eCut9opEI8Y=
+github.com/brettbates/go-libp4 v0.1.0/go.mod h1:+Tqe3D/t3/k4WzG868MUCH5lqb72jZU3ZuXTrk4Eev4=
 github.com/brettbates/p4broker-reader v0.1.1 h1:Rb8DeaxUZPZpYCjnMmX6QY/OrtzsAcCptKFPBNgwGys=
 github.com/brettbates/p4broker-reader v0.1.1/go.mod h1:jVQmD9R0r6NDdSwz0IXxnC968+x5S/ReCG+gIeq0Ymo=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=

@@ -1,0 +1,1 @@
+Must symlink response.txt to the broker cwd. May be a better way to do this?

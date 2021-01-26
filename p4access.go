@@ -1,8 +1,8 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -20,7 +20,7 @@ type args struct {
 func output(p4r prots.P4Runner, ps prots.Prots, args args) {
 	tmp, err := ioutil.ReadFile("response.txt")
 	if err != nil {
-		log.Fatalln("Failed to find answer.txt template")
+		log.Fatalln("Failed to find response.txt template")
 	}
 	t := template.Must(template.New("response").Parse(string(tmp)))
 	info, err := ps.OutputInfo(p4r, args.path, args.reqAccess)
@@ -47,30 +47,25 @@ func input() args {
 	return a
 }
 
-func logSetup() {
-	// If running from main, make sure to print to a log file and stdout
+func reject(err error) {
+	if err != nil {
+		fmt.Println("action: REJECT")
+		fmt.Println("message: Failed to get protections, please contact support")
+		log.Println("Failing, err recvd:")
+		log.Println(err)
+		os.Exit(0)
+	}
+}
+
+func main() {
 	f, err := os.OpenFile("output.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
 	defer f.Close()
-	wrt := io.MultiWriter(os.Stdout, f)
-	log.SetOutput(wrt)
-}
-
-func reject(err error) {
-	if err != nil {
-		log.Printf("action: REJECT")
-		log.Printf("message: Failed to get protections, please contact support")
-		log.Println(err)
-		panic(err)
-	}
-}
-
-func main() {
-	logSetup()
+	log.SetOutput(f)
 	args := input()
-	p4c := prots.NewP4C()
+	p4c := prots.NewP4CParams()
 	res, err := prots.Protections(p4c, args.path)
 	reject(err)
 	advice, err := res.Advise(p4c, args.user, args.path, args.reqAccess)
