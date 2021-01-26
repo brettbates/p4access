@@ -1,3 +1,5 @@
+action: PASS
+message: 
 {{ range $group := .Groups }}
     Group "{{ $group.Group }}" grants {{ $group.Access }} access to the path: 
 
