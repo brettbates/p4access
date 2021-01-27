@@ -89,6 +89,12 @@ func (p Prot) owners(p4r P4Runner) ([]string, error) {
 // Prots is a set of protections
 type Prots []Prot
 
+func segments(path string) int {
+	return len(strings.FieldsFunc(path, func(c rune) bool {
+		return c == '/'
+	}))
+}
+
 // Protections takes a path in p4 depot syntax
 func Protections(p4r P4Runner, path string) (Prots, error) {
 	res, err := p4r.Run([]string{"protects", "-a", path})
@@ -120,9 +126,7 @@ func Protections(p4r P4Runner, path string) (Prots, error) {
 		if _, ok := r["isgroup"]; ok {
 			p.IsGroup = ok
 		}
-		p.Segments = len(strings.FieldsFunc(p.DepotFile, func(c rune) bool {
-			return c == '/'
-		}))
+		p.Segments = segments(p.DepotFile)
 		prots = append(prots, p)
 	}
 	return prots, err
@@ -172,6 +176,15 @@ func (ps *Prots) filter(p4r P4Runner, path, reqAccess string) (Prots, error) {
 	// Reverse prots and filter out non-matching prots
 	for i := len(*ps) - 1; i >= 0; i-- {
 		c := (*ps)[i]
+
+		/* We should ignore prots that have more segments that the request
+		This may be too much of a heuristic, but if i ask for //depot/...
+		I shouldn't receive //depot/path/to/file protections */
+		pseg := segments(path)
+		if c.Segments > pseg {
+			continue
+		}
+
 		// TODO this won't work if there are only groups available above the reqAccess
 		// Should we re-run failing read requests with write after?
 		if permMap[c.Perm] >= minA && permMap[c.Perm] <= maxA {

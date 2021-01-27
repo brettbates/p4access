@@ -225,6 +225,49 @@ var filterTests = []filterTest{
 		},
 		err: nil,
 	},
+	{ // We should ignore prots that have more segments that the request
+		// This may be too much of a heuristic, but if i ask for //depot/...
+		// I shouldn't receive //depot/path/to/file protections
+		input: filterInput{
+			"//depot/mapped",
+			"write",
+			Prots{
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/mapped/longer",
+					Unmap:     false,
+					Segments:  3,
+				},
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//depot/mapped",
+					Unmap:     false,
+					Segments:  2,
+				},
+			},
+		},
+		want: Prots{
+			{
+				Perm:      "write",
+				Host:      "host",
+				User:      "grp",
+				IsGroup:   true,
+				Line:      2,
+				DepotFile: "//depot/mapped",
+				Unmap:     false,
+				Segments:  2,
+			},
+		},
+		err: nil,
+	},
 	{
 		input: filterInput{
 			"//depot/unmapped",
@@ -413,7 +456,7 @@ var adviseTests = []adviseTest{
 			Line:      2,
 			DepotFile: "//depot/...",
 			Unmap:     false,
-			Segments:  1,
+			Segments:  2,
 		}},
 		err: nil,
 	},
