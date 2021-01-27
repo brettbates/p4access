@@ -62,22 +62,36 @@ type Prot struct {
 	Segments  int
 }
 
+// Owner represents the username and password of a group owner
+type Owner struct {
+	User  string
+	Email string
+}
+
 // owners returns the owners for a given prots group
-func (p Prot) owners(p4r P4Runner) ([]string, error) {
+func (p Prot) owners(p4r P4Runner) ([]Owner, error) {
 	res, err := p4r.Run([]string{"group", "-o", p.User})
 	if err != nil {
 		return nil, err
 	}
 
 	i := 0
-	r := res[0]
-	out := []string{}
+	out := []Owner{}
 	// There is an indeterminate amount of OwnersX: owner.name
 	// so we have to just try them all until we run out
 	for {
 		key := fmt.Sprintf("Owners%d", i)
-		if v, ok := r[key]; ok {
-			out = append(out, v.(string))
+		if v, ok := res[0][key]; ok {
+			user := v.(string)
+			// We have the username, find their email address
+			ures, err := p4r.Run([]string{"user", "-o", user})
+			if err != nil {
+				return nil, err
+			}
+			if uv, ok := ures[0]["Email"]; ok {
+				email := uv.(string)
+				out = append(out, Owner{user, email})
+			}
 			i++
 		} else {
 			break
@@ -137,7 +151,7 @@ type Info struct {
 	Path   string
 	Access string
 	Group  string
-	Owners []string
+	Owners []Owner
 }
 
 // OutputInfo prepares the output for use in a template

@@ -12,6 +12,7 @@ type FakeP4Runner struct {
 	mock.Mock
 }
 
+// Mocks p4.Run, so we can run fake perforce commands
 func (mock *FakeP4Runner) Run(args []string) ([]map[interface{}]interface{}, error) {
 	ags := mock.Called(args)
 	return ags.Get(0).([]map[interface{}]interface{}), ags.Error(1)
@@ -800,13 +801,43 @@ func TestOwners(t *testing.T) {
 		"MaxScanRows":     "unset",
 		"MaxLockTime":     "unset",
 	}}
+	owner1 := []map[interface{}]interface{}{{
+		"code":           "stat",
+		"AuthMethod":     "ldap",
+		"Update":         "2016/02/09 11:41:06",
+		"passwordChange": "2018/11/25 13:43:16",
+		"Access":         "2020/03/09 10:18:01",
+		"extraTagType0":  "date",
+		"User":           "owner.first",
+		"FullName":       "Owner First",
+		"Type":           "standard",
+		"Email":          "owner.first@p4access.com",
+		"extraTag0":      "passwordChange",
+	}}
+	owner2 := []map[interface{}]interface{}{{
+		"code":           "stat",
+		"AuthMethod":     "ldap",
+		"Update":         "2016/02/09 11:41:06",
+		"passwordChange": "2018/11/25 13:43:16",
+		"Access":         "2020/03/09 10:18:01",
+		"extraTagType0":  "date",
+		"User":           "owner.second",
+		"FullName":       "Owner Second",
+		"Type":           "standard",
+		"Email":          "owner.second@p4access.com",
+		"extraTag0":      "passwordChange",
+	}}
 	tstProt := Prot{IsGroup: true, User: "P_group_name"}
 	fp4 := &FakeP4Runner{}
 	fp4.On("Run", []string{"group", "-o", "P_group_name"}).Return(tst, nil)
+	fp4.On("Run", []string{"user", "-o", "owner.first"}).Return(owner1, nil)
+	fp4.On("Run", []string{"user", "-o", "owner.second"}).Return(owner2, nil)
 
 	res, err := tstProt.owners(fp4)
 
 	assert := assert.New(t)
 	assert.Nil(err)
-	assert.Equal([]string{"owner.first", "owner.second"}, res)
+	assert.Equal([]Owner{
+		{"owner.first", "owner.first@p4access.com"},
+		{"owner.second", "owner.second@p4access.com"}}, res)
 }
