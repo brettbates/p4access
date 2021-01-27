@@ -168,7 +168,7 @@ func (ps *Prots) OutputInfo(p4r P4Runner, path, reqAccess string) ([]Info, error
 			return nil, err
 		}
 		// Don't report on ownerless groups
-		if len(owners) >= 0 {
+		if len(owners) > 0 {
 			out = append(out, Info{
 				path,
 				reqAccess,

@@ -892,16 +892,72 @@ var outputInfoTests = []outputInfoTest{
 		},
 		nil,
 	},
+	{
+		// Multiple owners
+		outputInfoInput{
+			testGroup{"g1", []Owner{
+				{"o1", "o o", "o@o.o"},
+				{"o2", "o 2", "o2@o.o"},
+			}},
+			"//depot/...",
+			"write",
+			Prots{
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "g1",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+			},
+		},
+		[]Info{
+			{
+				"//depot/...",
+				"write",
+				"g1",
+				[]Owner{
+					{"o1", "o o", "o@o.o"},
+					{"o2", "o 2", "o2@o.o"},
+				},
+			},
+		},
+		nil,
+	},
+	{
+		// no owners
+		outputInfoInput{
+			testGroup{"g1", []Owner{}},
+			"//depot/...",
+			"write",
+			Prots{
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "g1",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+			},
+		},
+		nil,
+		errors.New("No matching groups found, try again with a more specific path"),
+	},
 }
 
 func TestOutputInfo(t *testing.T) {
 	for _, tst := range outputInfoTests {
 		fp4 := &FakeP4Runner{}
-		gret := []map[interface{}]interface{}{}
+		// Build a return for group -o
+		gret := []map[interface{}]interface{}{{}}
 		for i, o := range tst.input.groups.owners {
-			gret = append(gret, map[interface{}]interface{}{
-				fmt.Sprintf("Owners%d", i): o.User,
-			})
+			gret[0][fmt.Sprintf("Owners%d", i)] = o.User
 			fp4.On("Run", []string{"user", "-o", o.User}).Return(
 				[]map[interface{}]interface{}{{"Email": o.Email, "FullName": o.FullName}}, nil)
 		}
