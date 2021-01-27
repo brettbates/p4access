@@ -333,7 +333,7 @@ var adviseTests = []adviseTest{
 		err:  errors.New("User usr already has write access or higher to //depot/hasAccess"),
 	},
 	{ // This should fail as we aren't requesting read or write
-		// TODO Move this to the command line parsing func
+		// TODO This may be more appropriate in main.input()
 		input: adviseInput{
 			"usr",
 			"//depot/hasAccess",
@@ -373,6 +373,45 @@ var adviseTests = []adviseTest{
 			IsGroup:   true,
 			Line:      1,
 			DepotFile: "//...",
+			Unmap:     false,
+			Segments:  1,
+		}},
+		err: nil,
+	},
+	{ // Don't advise groups with paths further down the tree
+		input: adviseInput{
+			"usr",
+			"//depot/...",
+			"write",
+			Prots{
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/path/to/afile",
+					Unmap:     false,
+					Segments:  4,
+				},
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+			}},
+		want: Prots{{
+			Perm:      "write",
+			Host:      "host",
+			User:      "grp2",
+			IsGroup:   true,
+			Line:      2,
+			DepotFile: "//depot/...",
 			Unmap:     false,
 			Segments:  1,
 		}},
