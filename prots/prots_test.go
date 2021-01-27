@@ -2,6 +2,7 @@ package prots
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -840,4 +841,80 @@ func TestOwners(t *testing.T) {
 	assert.Equal([]Owner{
 		{"owner.first", "Owner First", "owner.first@p4access.com"},
 		{"owner.second", "Owner Second", "owner.second@p4access.com"}}, res)
+}
+
+type testGroup struct {
+	group  string
+	owners []Owner
+}
+
+type outputInfoInput struct {
+	groups    testGroup
+	path      string
+	reqAccess string
+	prots     Prots
+}
+
+type outputInfoTest struct {
+	input outputInfoInput
+	want  []Info
+	err   error
+}
+
+var outputInfoTests = []outputInfoTest{
+	{
+		outputInfoInput{
+			testGroup{"g1", []Owner{{"o1", "o o", "o@o.o"}}},
+			"//depot/...",
+			"write",
+			Prots{
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "g1",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+			},
+		},
+		[]Info{
+			{
+				"//depot/...",
+				"write",
+				"g1",
+				[]Owner{
+					{"o1", "o o", "o@o.o"},
+				},
+			},
+		},
+		nil,
+	},
+}
+
+func TestOutputInfo(t *testing.T) {
+	for _, tst := range outputInfoTests {
+		fp4 := &FakeP4Runner{}
+		gret := []map[interface{}]interface{}{}
+		for i, o := range tst.input.groups.owners {
+			gret = append(gret, map[interface{}]interface{}{
+				fmt.Sprintf("Owners%d", i): o.User,
+			})
+			fp4.On("Run", []string{"user", "-o", o.User}).Return(
+				[]map[interface{}]interface{}{{"Email": o.Email, "FullName": o.FullName}}, nil)
+		}
+		fp4.On("Run", []string{"group", "-o", tst.input.groups.group}).Return(gret, nil)
+		res, err := tst.input.prots.OutputInfo(fp4, tst.input.path, tst.input.reqAccess)
+
+		assert := assert.New(t)
+		if tst.err == nil {
+			assert.Nil(err)
+		} else {
+			assert.EqualError(err, tst.err.Error())
+		}
+		assert.Equal(tst.want, res)
+	}
+
 }

@@ -167,12 +167,18 @@ func (ps *Prots) OutputInfo(p4r P4Runner, path, reqAccess string) ([]Info, error
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, Info{
-			path,
-			reqAccess,
-			p.User,
-			owners,
-		})
+		// Don't report on ownerless groups
+		if len(owners) >= 0 {
+			out = append(out, Info{
+				path,
+				reqAccess,
+				p.User,
+				owners,
+			})
+		}
+	}
+	if len(out) == 0 {
+		return nil, errors.New("No matching groups found, try again with a more specific path")
 	}
 	return out, nil
 }
