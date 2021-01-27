@@ -6,5 +6,4 @@ type Config struct {
 	P4Port   string
 	P4User   string
 	P4Client string
-	Leak     bool
 }

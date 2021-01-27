@@ -38,10 +38,10 @@ var permMap map[string]uint8
 
 func init() {
 	permMap = map[string]uint8{
-		"none":   0x000000, // none
+		"none":   0x000000, // Grants no access
 		"list":   0x000001, // Grants list access
 		"read":   0x000002, // Grants read access
-		"branch": 0x000004, // Grants ability to branch/integ from
+		"branch": 0x000004, // Grants ability to branch/integ from - used with unmaps
 		"open":   0x000008, // Grants open access
 		"write":  0x000010, // Grants write access
 		"review": 0x000020, // Grants review access

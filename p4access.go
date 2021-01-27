@@ -13,14 +13,16 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+// args are the arguments from 'p4 access reqAccess path'
 type args struct {
 	user      string
 	reqAccess string
 	path      string
 }
 
+// output creates p4broker friendly text to send back to the user
 func output(p4r prots.P4Runner, ps prots.Prots, args args) {
-	tmp, err := ioutil.ReadFile("response.txt")
+	tmp, err := ioutil.ReadFile("response.go.tpl")
 	if err != nil {
 		log.Fatalln("Failed to find response.txt template")
 	}
@@ -36,6 +38,9 @@ func output(p4r prots.P4Runner, ps prots.Prots, args args) {
 	}
 }
 
+// input gathers all the information p4broker has passed on
+// Arg0 is read/write
+// Arg1 is the path
 func input() args {
 	res, err := p4b.Read(os.Stdin)
 	if err != nil {
@@ -43,12 +48,13 @@ func input() args {
 	}
 	a := args{
 		res["user"],
-		res["Arg0"],
+		res["Arg0"], // TODO This should error if not read/write ?
 		res["Arg1"],
 	}
 	return a
 }
 
+// reject will send a failure message to the user and record the error in a log file
 func reject(err error) {
 	if err != nil {
 		fmt.Println("action: REJECT")
