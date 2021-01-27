@@ -21,10 +21,10 @@ type args struct {
 }
 
 // output creates p4broker friendly text to send back to the user
-func output(p4r prots.P4Runner, ps prots.Prots, args args) {
-	tmp, err := ioutil.ReadFile("response.go.tpl")
+func output(p4r prots.P4Runner, ps prots.Prots, args args, c config.Config) {
+	tmp, err := ioutil.ReadFile(c.Response)
 	if err != nil {
-		log.Fatalln("Failed to find response.txt template")
+		log.Fatalf("Failed to find response template %s", c.Response)
 	}
 	t := template.Must(template.New("response").Parse(string(tmp)))
 	info, err := ps.OutputInfo(p4r, args.path, args.reqAccess)
@@ -66,19 +66,19 @@ func reject(err error) {
 }
 
 func main() {
-	f, err := os.OpenFile("output.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	var c config.Config
+	reject(envconfig.Process("p4access", &c))
+	f, err := os.OpenFile(c.Log, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
 	}
 	defer f.Close()
 	log.SetOutput(f)
 	args := input()
-	var c config.Config
-	reject(envconfig.Process("p4access", &c))
 	p4c := prots.NewP4CParams(c)
 	res, err := prots.Protections(p4c, args.path)
 	reject(err)
 	advice, err := res.Advise(p4c, args.user, args.path, args.reqAccess)
 	reject(err)
-	output(p4c, advice, args)
+	output(p4c, advice, args, c)
 }
