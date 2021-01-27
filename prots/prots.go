@@ -10,6 +10,7 @@ import (
 
 	// This should be rcowham/go-libp4, but he needs to accept the pull request
 	p4 "github.com/brettbates/go-libp4"
+	"github.com/brettbates/p4access/config"
 )
 
 // P4Runner is an interface for testing without calling p4
@@ -28,8 +29,8 @@ func NewP4C() *P4C {
 }
 
 // NewP4CParams TODO This needs to read from .p4config files
-func NewP4CParams() *P4C {
-	return &P4C{P4: *p4.NewP4Params("<SERVER>:1666", "perforce", "p4access_ws")}
+func NewP4CParams(c config.Config) *P4C {
+	return &P4C{P4: *p4.NewP4Params(c.P4Port, c.P4User, c.P4Client)}
 }
 
 // permMap maps permission levels to their hex value

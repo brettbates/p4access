@@ -7,8 +7,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/brettbates/p4access/config"
 	"github.com/brettbates/p4access/prots"
 	p4b "github.com/brettbates/p4broker-reader/reader"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type args struct {
@@ -65,7 +67,9 @@ func main() {
 	defer f.Close()
 	log.SetOutput(f)
 	args := input()
-	p4c := prots.NewP4CParams()
+	var c config.Config
+	reject(envconfig.Process("p4access", &c))
+	p4c := prots.NewP4CParams(c)
 	res, err := prots.Protections(p4c, args.path)
 	reject(err)
 	advice, err := res.Advise(p4c, args.user, args.path, args.reqAccess)
