@@ -29,7 +29,7 @@ func output(p4r prots.P4Runner, ps prots.Prots, args args, c config.Config) {
 	t := template.Must(template.New("response").Parse(string(tmp)))
 	info, err := ps.OutputInfo(p4r, args.path, args.reqAccess)
 	if err != nil {
-		log.Fatalf("Failed to retrieve the output data %v", err)
+		reject(err)
 	}
 	out := struct{ Groups []prots.Info }{Groups: info}
 	err = t.Execute(os.Stdout, out)
@@ -57,10 +57,14 @@ func input() args {
 // reject will send a failure message to the user and record the error in a log file
 func reject(err error) {
 	if err != nil {
-		fmt.Println("action: REJECT")
-		fmt.Println("message: Failed to get protections, please contact support")
+		out := "action: REJECT\n" +
+			"message: \"Failing, err received:\n" +
+			err.Error() +
+			"\""
+		fmt.Printf(out)
+		// Write to log too
 		log.Println("Failing, err recvd:")
-		log.Println(err)
+		log.Println(out)
 		os.Exit(0)
 	}
 }
