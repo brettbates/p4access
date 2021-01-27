@@ -7,6 +7,6 @@ message:  "
 
     You can get access by contacting one of the owners listed: 
     {{ range $group.Owners }} 
-        {{ . }} {{ end }}
+        {{ .FullName }}: {{ .Email }} {{ end }}
 {{ end }}
 "

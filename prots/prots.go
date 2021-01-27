@@ -64,8 +64,9 @@ type Prot struct {
 
 // Owner represents the username and password of a group owner
 type Owner struct {
-	User  string
-	Email string
+	User     string
+	FullName string
+	Email    string
 }
 
 // owners returns the owners for a given prots group
@@ -88,10 +89,14 @@ func (p Prot) owners(p4r P4Runner) ([]Owner, error) {
 			if err != nil {
 				return nil, err
 			}
+			var fullname, email string
 			if uv, ok := ures[0]["Email"]; ok {
-				email := uv.(string)
-				out = append(out, Owner{user, email})
+				email = uv.(string)
 			}
+			if uv, ok := ures[0]["FullName"]; ok {
+				fullname = uv.(string)
+			}
+			out = append(out, Owner{user, fullname, email})
 			i++
 		} else {
 			break

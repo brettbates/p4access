@@ -838,6 +838,6 @@ func TestOwners(t *testing.T) {
 	assert := assert.New(t)
 	assert.Nil(err)
 	assert.Equal([]Owner{
-		{"owner.first", "owner.first@p4access.com"},
-		{"owner.second", "owner.second@p4access.com"}}, res)
+		{"owner.first", "Owner First", "owner.first@p4access.com"},
+		{"owner.second", "Owner Second", "owner.second@p4access.com"}}, res)
 }
