@@ -183,7 +183,7 @@ func (ps *Prots) OutputInfo(p4r P4Runner, path, reqAccess string) ([]Info, error
 	return out, nil
 }
 
-// filterProts filters the given prots for
+// filterProts filters the output Prots from 'p4 protects' for those that pertain to the the request
 func (ps *Prots) filter(p4r P4Runner, path, reqAccess string) (Prots, error) {
 	out := Prots{}
 
@@ -210,10 +210,8 @@ func (ps *Prots) filter(p4r P4Runner, path, reqAccess string) (Prots, error) {
 			continue
 		}
 
-		// TODO this won't work if there are only groups available above the reqAccess
-		// Should we re-run failing read requests with write after?
+		// Check that the group actually gives the correct access
 		if permMap[c.Perm] >= minA && permMap[c.Perm] <= maxA {
-			// Check that the group actually gives the correct access
 			res, err := p4r.Run([]string{"protects", "-M", "-g", c.User, path})
 			if err != nil {
 				return nil, err
@@ -235,7 +233,8 @@ func (ps *Prots) filter(p4r P4Runner, path, reqAccess string) (Prots, error) {
 	return out, nil
 }
 
-// sort reorders the given protections so that the closer the path is, the earlier it is
+// sort reorders the given protections so that the long the path is (in segments), the earlier it is
+// This might be too simplistic, but it seems to give decent results
 func (ps *Prots) sort(path string) Prots {
 	out := *ps
 	// Stable means protections with the same number of segments are returned in reverse order
