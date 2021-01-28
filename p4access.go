@@ -48,7 +48,7 @@ func input() args {
 	}
 	a := args{
 		res["user"],
-		res["Arg0"], // TODO This should error if not read/write ?
+		res["Arg0"],
 		res["Arg1"],
 	}
 	return a
@@ -58,7 +58,7 @@ func input() args {
 func reject(err error) {
 	if err != nil {
 		out := "action: REJECT\n" +
-			"message: \"Failing, err received:\n" +
+			"message: \"Failing, error received:\n" +
 			err.Error() +
 			"\""
 		fmt.Printf(out)
