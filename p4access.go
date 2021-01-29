@@ -20,18 +20,25 @@ type args struct {
 	path      string
 }
 
+// templateInfo is the struct fed to the result template
+// any information you need in the template must be contained here
+type templateInfo struct {
+	Groups  []prots.Info
+	Context string
+}
+
 // output creates p4broker friendly text to send back to the user
-func output(p4r prots.P4Runner, ps prots.Prots, args args, c config.Config) {
+func output(p4r prots.P4Runner, adv *prots.Advice, args args, c config.Config) {
 	tmp, err := ioutil.ReadFile(c.Response)
 	if err != nil {
 		log.Fatalf("Failed to find response template %s", c.Response)
 	}
 	t := template.Must(template.New("response").Parse(string(tmp)))
-	info, err := ps.OutputInfo(p4r, args.path, args.reqAccess)
+	info, err := adv.OutputInfo(p4r, args.path, args.reqAccess)
 	if err != nil {
 		reject(err)
 	}
-	out := struct{ Groups []prots.Info }{Groups: info}
+	out := templateInfo{info, adv.Context}
 	err = t.Execute(os.Stdout, out)
 	if err != nil {
 		log.Fatalf("Failed to execute template\n%v", err)

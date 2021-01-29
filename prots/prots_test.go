@@ -354,7 +354,7 @@ type adviseInput struct {
 
 type adviseTest struct {
 	input adviseInput
-	want  Prots
+	want  *Advice
 	err   error
 }
 
@@ -374,8 +374,21 @@ var adviseTests = []adviseTest{
 				Unmap:     false,
 				Segments:  1,
 			}}},
-		want: nil,
-		err:  errors.New("User usr already has write access or higher to //depot/hasAccess"),
+		want: &Advice{
+			Prots{
+				{
+					Perm:      "write",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//...",
+					Unmap:     false,
+					Segments:  1,
+				},
+			},
+			"User usr already has write access or higher to //depot/hasAccess"},
+		err: nil,
 	},
 	{ // This should fail as we aren't requesting read or write
 		// TODO This may be more appropriate in main.input()
@@ -411,7 +424,7 @@ var adviseTests = []adviseTest{
 				Unmap:     false,
 				Segments:  1,
 			}}},
-		want: Prots{{
+		want: &Advice{Prots{{
 			Perm:      "write",
 			Host:      "host",
 			User:      "grp",
@@ -421,6 +434,8 @@ var adviseTests = []adviseTest{
 			Unmap:     false,
 			Segments:  1,
 		}},
+			"",
+		},
 		err: nil,
 	},
 	{ // Don't advise groups with paths further down the tree
@@ -450,7 +465,7 @@ var adviseTests = []adviseTest{
 					Segments:  2,
 				},
 			}},
-		want: Prots{{
+		want: &Advice{Prots{{
 			Perm:      "write",
 			Host:      "host",
 			User:      "grp2",
@@ -460,6 +475,8 @@ var adviseTests = []adviseTest{
 			Unmap:     false,
 			Segments:  2,
 		}},
+			"",
+		},
 		err: nil,
 	},
 	{ // Correct group following higher access group
@@ -488,16 +505,19 @@ var adviseTests = []adviseTest{
 					Unmap:     false,
 					Segments:  2,
 				}}},
-		want: Prots{{
-			Perm:      "read",
-			Host:      "host",
-			User:      "grp2",
-			IsGroup:   true,
-			Line:      2,
-			DepotFile: "//depot/...",
-			Unmap:     false,
-			Segments:  2,
-		}},
+		want: &Advice{
+			Prots{{
+				Perm:      "read",
+				Host:      "host",
+				User:      "grp2",
+				IsGroup:   true,
+				Line:      2,
+				DepotFile: "//depot/...",
+				Unmap:     false,
+				Segments:  2,
+			}},
+			"",
+		},
 		err: nil,
 	},
 	{ // Request read with read and open available
@@ -527,16 +547,19 @@ var adviseTests = []adviseTest{
 					Segments:  2,
 				}}},
 		// I only want to know of the closer 2nd line
-		want: Prots{{
-			Perm:      "read",
-			Host:      "host",
-			User:      "grp2",
-			IsGroup:   true,
-			Line:      2,
-			DepotFile: "//depot/...",
-			Unmap:     false,
-			Segments:  2,
-		}},
+		want: &Advice{
+			Prots{{
+				Perm:      "read",
+				Host:      "host",
+				User:      "grp2",
+				IsGroup:   true,
+				Line:      2,
+				DepotFile: "//depot/...",
+				Unmap:     false,
+				Segments:  2,
+			}},
+			"",
+		},
 		err: nil,
 	},
 	{ // Request read with read and open available reverse order
@@ -567,7 +590,7 @@ var adviseTests = []adviseTest{
 				},
 			}},
 		// I only want to know of the closer 1st line
-		want: Prots{{
+		want: &Advice{Prots{{
 			Perm:      "read",
 			Host:      "host",
 			User:      "grp2",
@@ -577,6 +600,8 @@ var adviseTests = []adviseTest{
 			Unmap:     false,
 			Segments:  2,
 		}},
+			"",
+		},
 		err: nil,
 	},
 	{ // Request read with read, open and write available, differing reads
@@ -617,16 +642,19 @@ var adviseTests = []adviseTest{
 				},
 			}},
 		// I only want to know of the closer 1st line
-		want: Prots{{
-			Perm:      "read",
-			Host:      "host",
-			User:      "grp2",
-			IsGroup:   true,
-			Line:      1,
-			DepotFile: "//depot/...",
-			Unmap:     false,
-			Segments:  2,
-		}},
+		want: &Advice{
+			Prots{{
+				Perm:      "read",
+				Host:      "host",
+				User:      "grp2",
+				IsGroup:   true,
+				Line:      1,
+				DepotFile: "//depot/...",
+				Unmap:     false,
+				Segments:  2,
+			}},
+			"",
+		},
 		err: nil,
 	},
 	{ // Request read with read, open and write available, same read paths
@@ -668,27 +696,30 @@ var adviseTests = []adviseTest{
 			}},
 		// We should get both groups read groups back as they give the same
 		// It will be up to the user which they pick
-		want: Prots{
-			{
-				Perm:      "open",
-				Host:      "host",
-				User:      "grp",
-				IsGroup:   true,
-				Line:      2,
-				DepotFile: "//depot/...",
-				Unmap:     false,
-				Segments:  2,
+		want: &Advice{
+			Prots{
+				{
+					Perm:      "open",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      2,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
+				{
+					Perm:      "read",
+					Host:      "host",
+					User:      "grp2",
+					IsGroup:   true,
+					Line:      1,
+					DepotFile: "//depot/...",
+					Unmap:     false,
+					Segments:  2,
+				},
 			},
-			{
-				Perm:      "read",
-				Host:      "host",
-				User:      "grp2",
-				IsGroup:   true,
-				Line:      1,
-				DepotFile: "//depot/...",
-				Unmap:     false,
-				Segments:  2,
-			},
+			"",
 		},
 		err: nil,
 	},
@@ -742,17 +773,20 @@ var adviseTests = []adviseTest{
 				},
 			}},
 		// We should only get the open
-		want: Prots{
-			{
-				Perm:      "open",
-				Host:      "host",
-				User:      "grp",
-				IsGroup:   true,
-				Line:      3,
-				DepotFile: "//unmap/...",
-				Unmap:     false,
-				Segments:  2,
+		want: &Advice{
+			Prots{
+				{
+					Perm:      "open",
+					Host:      "host",
+					User:      "grp",
+					IsGroup:   true,
+					Line:      3,
+					DepotFile: "//unmap/...",
+					Unmap:     false,
+					Segments:  2,
+				},
 			},
+			"",
 		},
 		err: nil,
 	},
@@ -780,7 +814,9 @@ func TestAdvise(t *testing.T) {
 		} else {
 			assert.EqualError(err, tst.err.Error())
 		}
-		assert.Equal(tst.want, res)
+		if tst.want != nil {
+			assert.Equal(tst.want, res)
+		}
 	}
 }
 
@@ -852,7 +888,7 @@ type outputInfoInput struct {
 	groups    testGroup
 	path      string
 	reqAccess string
-	prots     Prots
+	prots     Advice
 }
 
 type outputInfoTest struct {
@@ -867,7 +903,7 @@ var outputInfoTests = []outputInfoTest{
 			testGroup{"g1", []Owner{{"o1", "o o", "o@o.o"}}},
 			"//depot/...",
 			"write",
-			Prots{
+			Advice{Prots{
 				{
 					Perm:      "write",
 					Host:      "host",
@@ -878,7 +914,7 @@ var outputInfoTests = []outputInfoTest{
 					Unmap:     false,
 					Segments:  2,
 				},
-			},
+			}, "some advice"},
 		},
 		[]Info{
 			{
@@ -901,7 +937,7 @@ var outputInfoTests = []outputInfoTest{
 			}},
 			"//depot/...",
 			"write",
-			Prots{
+			Advice{Prots{
 				{
 					Perm:      "write",
 					Host:      "host",
@@ -912,7 +948,7 @@ var outputInfoTests = []outputInfoTest{
 					Unmap:     false,
 					Segments:  2,
 				},
-			},
+			}, ""},
 		},
 		[]Info{
 			{
@@ -933,7 +969,7 @@ var outputInfoTests = []outputInfoTest{
 			testGroup{"g1", []Owner{}},
 			"//depot/...",
 			"write",
-			Prots{
+			Advice{Prots{
 				{
 					Perm:      "write",
 					Host:      "host",
@@ -944,7 +980,7 @@ var outputInfoTests = []outputInfoTest{
 					Unmap:     false,
 					Segments:  2,
 				},
-			},
+			}, ""},
 		},
 		nil,
 		errors.New("No matching groups found, try again with a more specific path"),

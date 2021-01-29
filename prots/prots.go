@@ -62,6 +62,9 @@ type Prot struct {
 	Segments  int
 }
 
+// Prots is a set of protections
+type Prots []Prot
+
 // Owner represents the username and password of a group owner
 type Owner struct {
 	User     string
@@ -104,9 +107,6 @@ func (p Prot) owners(p4r P4Runner) ([]Owner, error) {
 	}
 	return out, nil
 }
-
-// Prots is a set of protections
-type Prots []Prot
 
 func segments(path string) int {
 	return len(strings.FieldsFunc(path, func(c rune) bool {
@@ -160,9 +160,9 @@ type Info struct {
 }
 
 // OutputInfo prepares the output for use in a template
-func (ps *Prots) OutputInfo(p4r P4Runner, path, reqAccess string) ([]Info, error) {
+func (adv *Advice) OutputInfo(p4r P4Runner, path, reqAccess string) ([]Info, error) {
 	out := []Info{}
-	for _, p := range *ps {
+	for _, p := range adv.Ps {
 		owners, err := p.owners(p4r)
 		if err != nil {
 			return nil, err
@@ -245,10 +245,17 @@ func (ps *Prots) sort(path string) Prots {
 	return out
 }
 
+// Advice is the set of protections to go to the Output, along with any
+// other information we need to provide to the user
+type Advice struct {
+	Ps      Prots
+	Context string
+}
+
 // Advise running user on probable group to join
 // Returns one or more possible protections in order of how likely they are correct
-func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, error) {
-	// TODO Move this to the command line parsing func
+func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (*Advice, error) {
+	ctx := ""
 	if reqAccess != "read" && reqAccess != "write" {
 		return nil, errors.New("Must request either read or write access")
 	}
@@ -257,7 +264,7 @@ func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, erro
 	if err != nil {
 		return nil, err
 	} else if a {
-		return nil, fmt.Errorf("User %s already has %s access or higher to %s", user, reqAccess, path)
+		ctx = fmt.Sprintf("User %s already has %s access or higher to %s", user, reqAccess, path)
 	}
 
 	// Filter the prots for those that matter
@@ -276,7 +283,7 @@ func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (Prots, erro
 		}
 	}
 
-	return out, nil
+	return &Advice{out, ctx}, nil
 }
 
 // hasAccess checks whether the given user already has access
