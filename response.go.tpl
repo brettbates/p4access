@@ -1,6 +1,8 @@
 action: RESPOND
 message:  "
 Possible ways to get access are listed below. This is a beta, please report issues to support.
+
+*The more specific your path is, the more useful your results will be.*
 {{ if .Context }}
 Info:  {{ .Context }} 
 {{ end }}
@@ -15,7 +17,6 @@ Groups:
     {{ range $group.Owners }} 
         {{ .FullName }}: {{ .Email }} {{ end }}
     ----
-
 
 {{ end }}
 "
