@@ -20,9 +20,9 @@ type templateInfo struct {
 
 // Results places successful Advise output into a p4broker friendly format
 func Results(p4r prots.P4Runner, adv *prots.Advice, args Args, c config.Config) {
-	tmp, err := ioutil.ReadFile(c.Response)
+	tmp, err := ioutil.ReadFile(c.Results)
 	if err != nil {
-		log.Fatalf("Failed to find response template %s", c.Response)
+		log.Fatalf("Failed to find response template %s", c.Results)
 	}
 	t := template.Must(template.New("response").Parse(string(tmp)))
 	info, err := adv.OutputInfo(p4r, args.Path, args.ReqAccess)

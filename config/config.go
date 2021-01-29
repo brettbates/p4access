@@ -6,6 +6,6 @@ type Config struct {
 	P4Port   string
 	P4User   string
 	P4Client string
-	Response string `default:"response.go.tpl"`
+	Results  string `default:"results.go.tpl"`
 	Log      string `default:"p4access.log"`
 }
