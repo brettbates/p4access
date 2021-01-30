@@ -20,6 +20,10 @@ func main() {
 	defer f.Close()
 	log.SetOutput(f)
 	args := io.Input()
+	if args.ReqAccess == "-h" {
+		io.Help(c)
+		return
+	}
 	p4c := prots.NewP4CParams(c)
 	res, err := prots.Protections(p4c, args.Path)
 	io.Reject(err)
