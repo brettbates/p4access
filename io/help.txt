@@ -1,10 +1,18 @@
-actions: RESPOND
-message: "p4 access -h
+action: RESPOND
+message: "
 
-p4 access <read|write> <path>
+Access -- find access group(s)
 
-BETA This command attempts to find the correct group for you to get access to an area and tell you who to contact.
+p4 access <read|write> path[revRange]
 
-Please be as specific with the path as possible, it will give you better results.
+    BETA This command attempts to find the correct group for you to get access to an area and tell you who to contact.
 
-This is a work in progress, please contact support if it doesn't work as expected."
+    With the path, be as specific with the path as possible, it will give you better results.
+
+    For example:
+
+        p4 access read //path/to/some/file/MAIN/...
+        
+    Will find the best group(s) to give read access to //path/to/some/file/MAIN/...
+
+    This is a work in progress, please contact support if it doesn't work as expected."

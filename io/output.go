@@ -62,5 +62,6 @@ func Help(c config.Config) string {
 	if err != nil {
 		log.Fatalf("Failed to find help file %s", c.Help)
 	}
+	fmt.Print(string(out))
 	return string(out)
 }
