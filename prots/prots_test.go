@@ -20,39 +20,56 @@ func (mock *FakeP4Runner) Run(args []string) ([]map[interface{}]interface{}, err
 }
 
 type protTest struct {
-	input []map[interface{}]interface{}
-	want  Prots
+	input   []map[interface{}]interface{}
+	want    Prots
+	wantErr error
 }
 
 var protTests = []protTest{
-	{input: []map[interface{}]interface{}{{
-		"perm":      "super",
-		"host":      "host",
-		"user":      "user",
-		"line":      "1",
-		"depotFile": "//...",
-		// No unmap, so should be false
-	}},
-		want: Prots{{
-			Perm:      "super",
-			Host:      "host",
-			User:      "user",
-			IsGroup:   false,
-			Line:      1,
-			DepotFile: "//...",
-			Unmap:     false,
-			Segments:  1,
+	{
+		// If you ask for a non-existent depot, it errors like so:
+		input: []map[interface{}]interface{}{{
+			"code":     "error",
+			"data":     "//fake/depot/... - must refer to client 'HOSTNAME'.",
+			"generic":  "2",
+			"severity": "3",
 		}},
+		want:    Prots{},
+		wantErr: nil,
 	},
-	{input: []map[interface{}]interface{}{{
-		"perm":      "super",
-		"host":      "host",
-		"user":      "grp",
-		"isgroup":   "",
-		"line":      "1",
-		"depotFile": "//...",
-		// No unmap, so should be false
-	}},
+	{
+		// Single user protection
+		input: []map[interface{}]interface{}{{
+			"perm":      "super",
+			"host":      "host",
+			"user":      "user",
+			"line":      "1",
+			"depotFile": "//...",
+		}},
+		want: Prots{
+			{
+				Perm:      "super",
+				Host:      "host",
+				User:      "user",
+				IsGroup:   false,
+				Line:      1,
+				DepotFile: "//...",
+				Unmap:     false,
+				Segments:  1,
+			},
+		},
+		wantErr: nil,
+	},
+	{
+		// Single group protection
+		input: []map[interface{}]interface{}{{
+			"perm":      "super",
+			"host":      "host",
+			"user":      "grp",
+			"isgroup":   "",
+			"line":      "1",
+			"depotFile": "//...",
+		}},
 		want: Prots{{
 			Perm:      "super",
 			Host:      "host",
@@ -63,8 +80,10 @@ var protTests = []protTest{
 			Unmap:     false,
 			Segments:  1,
 		}},
+		wantErr: nil,
 	},
 	{
+		// Unamp protection
 		input: []map[interface{}]interface{}{
 			{
 				"perm":      "super",
@@ -72,7 +91,6 @@ var protTests = []protTest{
 				"user":      "user",
 				"line":      "1",
 				"depotFile": "//...",
-				// No unmap, so should be false
 			},
 			{
 				"perm":      "list",
@@ -102,6 +120,7 @@ var protTests = []protTest{
 				Unmap:     true,
 				Segments:  2,
 			}},
+		wantErr: nil,
 	},
 }
 
@@ -112,7 +131,7 @@ func TestProtections(t *testing.T) {
 		res, err := Protections(fp4, "//depot/path/afile.txt")
 		assert := assert.New(t)
 		assert.Nil(err)
-		assert.Equal(res, tst.want)
+		assert.Equal(tst.want, res)
 	}
 }
 
