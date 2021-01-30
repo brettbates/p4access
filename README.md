@@ -55,9 +55,14 @@ P4ACCESS_P4CLIENT
 
 
 Paths:
-All paths are from the perspective of the p4broker, so to avoid confusion, use the full path to the file
+All paths are from the perspective of the p4broker, so to avoid confusion, use the full path to the file. 
 P4ACCESS_RESPONSE
     The template to use for a non-error response
+    './io/results.go.tpl'
+P4ACCESS_HELP
+    The help text file
+    './io/help.txt'
 P4ACCESS_LOG
     The log file
+    'p4access.log'
 ```
