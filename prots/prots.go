@@ -320,7 +320,6 @@ func (ps *Prots) Advise(p4r P4Runner, user, path, reqAccess string) (*Advice, er
 func hasAccess(p4r P4Runner, user, path, reqAccess string) (bool, error) {
 	res, err := p4r.Run([]string{"protects", "-M", "-u", user, path})
 	if err != nil {
-		log.Printf("\nFailed to run protects for user %s to path %s\n%v\n", user, path, err)
 		return false, err
 	}
 
