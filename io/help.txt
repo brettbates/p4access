@@ -1,0 +1,10 @@
+actions: RESPOND
+message: "p4 access -h
+
+p4 access <read|write> <path>
+
+BETA This command attempts to find the correct group for you to get access to an area and tell you who to contact.
+
+Please be as specific with the path as possible, it will give you better results.
+
+This is a work in progress, please contact support if it doesn't work as expected."

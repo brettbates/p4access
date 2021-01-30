@@ -55,3 +55,12 @@ func Reject(err error) {
 		os.Exit(0)
 	}
 }
+
+// Help will print the help message from the help.txt file
+func Help(c config.Config) string {
+	out, err := ioutil.ReadFile(c.Help)
+	if err != nil {
+		log.Fatalf("Failed to find help file %s", c.Help)
+	}
+	return string(out)
+}

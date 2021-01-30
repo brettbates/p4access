@@ -7,5 +7,6 @@ type Config struct {
 	P4User   string
 	P4Client string
 	Results  string `default:"results.go.tpl"`
+	Help     string `default:"help.txt"`
 	Log      string `default:"p4access.log"`
 }

@@ -13,6 +13,7 @@ func TestConfig(t *testing.T) {
 	os.Setenv("P4ACCESS_P4USER", "usr")
 	os.Setenv("P4ACCESS_P4CLIENT", "client_ws")
 	os.Setenv("P4ACCESS_RESULTS", "/path/to/template.go.tpl")
+	os.Setenv("P4ACCESS_HELP", "/path/to/help.txt")
 	os.Setenv("P4ACCESS_LOG", "/path/to/p4access.log")
 
 	var c Config
@@ -23,5 +24,6 @@ func TestConfig(t *testing.T) {
 	assert.Equal("usr", c.P4User)
 	assert.Equal("client_ws", c.P4Client)
 	assert.Equal("/path/to/template.go.tpl", c.Results)
+	assert.Equal("/path/to/help.go.tpl", c.Help)
 	assert.Equal("/path/to/p4access.log", c.Log)
 }

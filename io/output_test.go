@@ -142,3 +142,19 @@ func TestResults(t *testing.T) {
 		assert.Equal(strings.Split(wants, "\n"), strings.Split(actual, "\n"))
 	}
 }
+
+func TestHelp(t *testing.T) {
+	var c config.Config
+	err := envconfig.Process("p4access", &c)
+	if err != nil {
+		t.Errorf("Failed to set up config %v", err)
+	}
+	wantF, err := ioutil.ReadFile("help.txt")
+	if err != nil {
+		t.Errorf("Failed to read in file %s, %v", wantF, err)
+	}
+	wants := string(wantF)
+	actual := Help(c)
+
+	assert.Equal(t, strings.Split(wants, "\n"), strings.Split(actual, "\n"))
+}
