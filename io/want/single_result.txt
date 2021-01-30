@@ -1,0 +1,20 @@
+action: RESPOND
+message:  "
+Possible ways to get access are listed below. This is a beta, please report issues to support.
+
+*The more specific your path is, the more useful your results will be.*
+
+Groups:
+
+    ----
+    Group P_group_for_somewhere grants read access to the path: 
+
+        //path/to/somewhere/...
+
+    You can get access by contacting one of the owners listed: 
+     
+        Owner First: owner.first@email.com 
+    ----
+
+
+"

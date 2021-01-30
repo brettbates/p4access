@@ -1,6 +1,7 @@
 package io
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,7 +20,7 @@ type templateInfo struct {
 }
 
 // Results places successful Advise output into a p4broker friendly format
-func Results(p4r prots.P4Runner, adv *prots.Advice, args Args, c config.Config) {
+func Results(p4r prots.P4Runner, adv *prots.Advice, args Args, c config.Config) string {
 	tmp, err := ioutil.ReadFile(c.Results)
 	if err != nil {
 		log.Fatalf("Failed to find response template %s", c.Results)
@@ -30,10 +31,14 @@ func Results(p4r prots.P4Runner, adv *prots.Advice, args Args, c config.Config) 
 		Reject(err)
 	}
 	out := templateInfo{info, adv.Context}
-	err = t.Execute(os.Stdout, out)
+	var ob bytes.Buffer
+	err = t.Execute(&ob, out)
+	obs := ob.Bytes() // So we can write to Stdout and return the value
+	os.Stdout.Write(obs)
 	if err != nil {
 		log.Fatalf("Failed to execute template\n%v", err)
 	}
+	return string(obs)
 }
 
 // Reject will send a failure message to the user and record the error in a log file
