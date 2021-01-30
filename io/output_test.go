@@ -40,7 +40,7 @@ type resultsTest struct {
 }
 
 var resultsTests = []resultsTest{
-	{
+	{ // Single result
 		resultsTestInput{
 			&prots.Advice{
 				Ps: prots.Prots{
@@ -73,6 +73,40 @@ var resultsTests = []resultsTest{
 			},
 		},
 		"./want/single_result.txt",
+	},
+	{ // Context result
+		resultsTestInput{
+			&prots.Advice{
+				Ps: prots.Prots{
+					{
+						Perm:      "read",
+						Host:      "host",
+						User:      "P_group_for_somewhere",
+						IsGroup:   true,
+						Line:      1,
+						DepotFile: "//path/to/somewhere/...",
+						Unmap:     false,
+						Segments:  4,
+					},
+				},
+				Context: "User a.user already has read access or higher to //path/to/somewhere/...",
+			},
+			Args{
+				"a.user",
+				"read",
+				"//path/to/somewhere/...",
+			},
+			testGroup{
+				"P_group_for_somewhere",
+				[]prots.Owner{
+					{
+						User:     "owner.first",
+						FullName: "Owner First",
+						Email:    "owner.first@email.com"},
+				},
+			},
+		},
+		"./want/single_result_context.txt",
 	},
 }
 

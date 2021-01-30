@@ -3,20 +3,20 @@ message:  "
 Possible ways to get access are listed below. This is a beta, please report issues to support.
 
 *The more specific your path is, the more useful your results will be.*
-{{ if .Context }}
-Info:  {{ .Context }}
-{{ end }}
-Groups:
-{{ range $group := .Groups }}
-    ----
-    Group {{ $group.Group }} grants {{ $group.Access }} access to the path: 
 
-        {{ $group.Path }}
+Info:  User a.user already has read access or higher to //path/to/somewhere/...
+
+Groups:
+
+    ----
+    Group P_group_for_somewhere grants read access to the path: 
+
+        //path/to/somewhere/...
 
     You can get access by contacting one of the owners listed: 
-    {{ range $group.Owners }} 
-        {{ .FullName }}: {{ .Email }} {{ end }}
+     
+        Owner First: owner.first@email.com 
     ----
 
-{{ end }}
+
 "
