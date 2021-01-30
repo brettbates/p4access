@@ -20,6 +20,7 @@ func main() {
 	defer f.Close()
 	log.SetOutput(f)
 	args := io.Input()
+	// If we get 'p4 access -h', print help and exit
 	if args.ReqAccess == "-h" {
 		io.Help(c)
 		return
