@@ -111,6 +111,7 @@ var resultsTests = []resultsTest{
 }
 
 // TODO share this with prots_test.go
+// Given a group and owners, mock p4r to give the correct results
 func FakeOutput(fp4 *FakeP4Runner, groups testGroup) {
 	gret := []map[interface{}]interface{}{{}}
 	for i, o := range groups.owners {
@@ -137,7 +138,6 @@ func TestResults(t *testing.T) {
 		}
 		wants := string(wantF)
 		actual := Results(fp4, tst.input.adv, tst.input.args, c)
-		// assert.Equal(wants, actual)
 		// This makes it easier to see line differences
 		assert.Equal(strings.Split(wants, "\n"), strings.Split(actual, "\n"))
 	}
