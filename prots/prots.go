@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -114,6 +115,29 @@ func segments(path string) int {
 	}))
 }
 
+func parseError(res map[interface{}]interface{}) error {
+	var err error
+	var e string
+	if v, ok := res["data"]; ok {
+		e = v.(string)
+	} else {
+		// I don't know if we can get in this situation
+		e = fmt.Sprintf("Failed to parse error %v", err)
+		return errors.New(e)
+	}
+	// Search for non-existent depot error
+	nodepot, err := regexp.Match(`must refer to client`, []byte(e))
+	if err != nil {
+		return err // Do we need to return (error, error) for real error and parsed one?
+	}
+	if nodepot {
+		path := strings.Split(e, " - must")[0]
+		return errors.New("No such area '" + path + "', please check your path")
+	}
+	err = fmt.Errorf("Unknown error, %v", res)
+	return err
+}
+
 // Protections takes a path in p4 depot syntax
 func Protections(p4r P4Runner, path string) (Prots, error) {
 	res, err := p4r.Run([]string{"protects", "-a", path})
@@ -123,6 +147,12 @@ func Protections(p4r P4Runner, path string) (Prots, error) {
 
 	prots := Prots{}
 	for _, r := range res {
+		if v, ok := r["code"]; ok {
+			code := v.(string)
+			if code == "error" {
+				return nil, parseError(r)
+			}
+		}
 		p := Prot{}
 		if v, ok := r["perm"]; ok {
 			p.Perm = v.(string)

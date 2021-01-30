@@ -24,6 +24,6 @@ func TestConfig(t *testing.T) {
 	assert.Equal("usr", c.P4User)
 	assert.Equal("client_ws", c.P4Client)
 	assert.Equal("/path/to/template.go.tpl", c.Results)
-	assert.Equal("/path/to/help.go.tpl", c.Help)
+	assert.Equal("/path/to/help.txt", c.Help)
 	assert.Equal("/path/to/p4access.log", c.Log)
 }

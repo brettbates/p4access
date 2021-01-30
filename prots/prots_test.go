@@ -19,6 +19,30 @@ func (mock *FakeP4Runner) Run(args []string) ([]map[interface{}]interface{}, err
 	return ags.Get(0).([]map[interface{}]interface{}), ags.Error(1)
 }
 
+type parseErrorTest struct {
+	input map[interface{}]interface{}
+	want  error
+}
+
+var parseErrorTests = []parseErrorTest{
+	{
+		input: map[interface{}]interface{}{
+			"code":     "error",
+			"data":     "//fake/depot/... - must refer to client 'HOSTNAME'.",
+			"generic":  "2",
+			"severity": "3",
+		},
+		want: errors.New("No such area '//fake/depot/...', please check your path"),
+	},
+}
+
+func TestParseError(t *testing.T) {
+	for _, tst := range parseErrorTests {
+		err := parseError(tst.input)
+		assert.Equal(t, tst.want, err)
+	}
+}
+
 type protTest struct {
 	input   []map[interface{}]interface{}
 	want    Prots
@@ -34,8 +58,8 @@ var protTests = []protTest{
 			"generic":  "2",
 			"severity": "3",
 		}},
-		want:    Prots{},
-		wantErr: nil,
+		want:    nil,
+		wantErr: errors.New("No such area '//fake/depot/...', please check your path"),
 	},
 	{
 		// Single user protection
@@ -130,7 +154,11 @@ func TestProtections(t *testing.T) {
 		fp4.On("Run", []string{"protects", "-a", "//depot/path/afile.txt"}).Return(tst.input, nil)
 		res, err := Protections(fp4, "//depot/path/afile.txt")
 		assert := assert.New(t)
-		assert.Nil(err)
+		if tst.wantErr != nil {
+			assert.Equal(tst.wantErr, err)
+		} else {
+			assert.Nil(err)
+		}
 		assert.Equal(tst.want, res)
 	}
 }
