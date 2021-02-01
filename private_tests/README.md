@@ -1,7 +1,7 @@
 # Private Tests
-To help find edge-cases whilst keeping this project open source, this test harness can be used to run 
+To help find edge-cases from real data whilst keeping this project open source, this test harness can be used to run 
 
-> p4 -u a.user access <read|write> <path>
+> p4 -u a.user access read|write path
 
 against a local broker pointing at your Perforce server. I recommend a local server so it doesn't affect the real broker.
 
